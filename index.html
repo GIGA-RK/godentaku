@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v13.3</title>
+    <title>CALC-777 v13.7</title>
     <style>
       * {
         box-sizing: border-box;
@@ -490,7 +490,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v13.3</div>
+        <div>▣ CALC-777 v13.7</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -557,8 +557,9 @@
         three: ["3枚役", 3],
         yellow: ["黄7", 8],
         navYellow: ["押順黄7", 15],
-        chance: ["チャンス目", 1],
-        reach: ["リーチ目", 30],
+        chance: ["1枚役", 1],
+        reach: ["", 30],
+        ggwin: ["GG", 0],
         gstop: ["G-STOP", 0],
         red7: ["赤7/S", 80],
         god: ["GOD", 120],
@@ -623,7 +624,7 @@
             " ",
           ),
         CH =
-          "101 303 505 707 100 300 500 V0V V2V V4V V6V V8V 38V 468 631 831".split(
+          "101 303 505 100 300 500 V0V V2V V4V V6V V8V 38V 468 631 831".split(
             " ",
           ),
         // G-ZONEの通常ハズレ枠。REACHに含まれる 135/315/V31/V34 は通常枠から除外。
@@ -637,7 +638,7 @@
           evenSeq: "234 456 678".split(" "),
           leftOddKetsu: "155 311 355 511 533 711 733 755".split(" "),
           oddSeq: "345 567".split(" "),
-          zeroSand: "010 030 050 070".split(" "),
+          zeroSand: "010 030 050".split(" "),
           oddSand: "131 151 313 353 515 535".split(" "),
           vHint: "V0V V2V V4V V6V V8V 12V 35V 68V 1V5 V46".split(" "),
           vStrong: "V1V V3V V5V".split(" "),
@@ -713,6 +714,29 @@
       function isOddWin(c) {
         return ODD_WIN.has(c);
       }
+      function normalWinEye(reason = "mode", sets = 1) {
+        if (reason === "v" || sets >= 3) return eyes("VVV");
+        return eyes(pick(["111", "333", "555"]));
+      }
+      function childRole(ch) {
+        if (!ch) return "none";
+        if (ch.role) return ch.role;
+        if (["ub", "mb"].includes(ch.k)) return "replay";
+        if (["ly", "ry", "cry", "my"].includes(ch.k)) return "yellow";
+        if (["oneA", "oneB", "oneC", "rf", "rfA", "rfB"].includes(ch.k)) return "chance";
+        if (["red7", "red7m", "sp"].includes(ch.k)) return "red7";
+        if (ch.k === "god") return "god";
+        return "none";
+      }
+      function childPay(ch) {
+        if (!ch) return 0;
+        if (typeof ch.pay === "number") return ch.pay;
+        if (["ly", "ry", "cry", "my"].includes(ch.k)) return 8;
+        if (["oneA", "oneB", "oneC", "rf", "rfA", "rfB"].includes(ch.k)) return 1;
+        if (["red7", "red7m", "sp"].includes(ch.k)) return 80;
+        if (ch.k === "god") return 120;
+        return 0;
+      }
       function stopAuto(msg) {
         if (autoLeft !== 0) {
           autoLeft = 0;
@@ -721,9 +745,12 @@
         }
       }
       function autoStop(res, code) {
+        // 内部当選・前兆開始だけではAUTOを止めない。
+        // 画面上で当選/上乗せが見えた時だけ停止する。
         return !!(
-          (res && (res.hit || res.direct || res.autoStop)) ||
-          ["777", "SSS", "VVV"].includes(code)
+          (res && (res.direct || res.autoStop)) ||
+          ["777", "SSS", "VVV"].includes(code) ||
+          isOddWin(code)
         );
       }
       function sync() {
@@ -828,117 +855,101 @@
         return pick(EYE_GROUPS[group] || EYE_GROUPS.basic);
       }
       function isBlockedNormalEye(s) {
+        if (["070", "707"].includes(s)) return true;
+        if (s[0] === "7" && s[2] === "7" && s !== "777") return true;
         return REACH.includes(s) || bad7(s) || isOddWin(s) || ["777", "SSS", "VVV"].includes(s);
       }
       function weightedModeEye(mode = st.mode) {
-        // 出目示唆を強めにモード連動させる。
-        // 低確〜通常では強い示唆目をかなり抑え、天国準備以上から段階的に増やす。
+        // 低確〜通常では強示唆目を出さない。
+        // 0ハサミ/V/7絡み/奇数順目は天国準備以上から段階的に解禁する。
         const tables = {
           lowA: [
-            { v: "basic", w: 76 },
+            { v: "basic", w: 79 },
             { v: "oddOnly", w: 16 },
-            { v: "leftEvenKetsu", w: 6 },
-            { v: "evenSeq", w: 1.2 },
-            { v: "leftOddKetsu", w: 0.5 },
-            { v: "zeroSand", w: 0.1 },
-            { v: "oddSand", w: 0.1 },
-            { v: "vHint", w: 0.05 },
-            { v: "sevenHint", w: 0.04 },
-            { v: "oddSeq", w: 0.01 },
+            { v: "leftEvenKetsu", w: 4 },
+            { v: "evenSeq", w: 1 },
           ],
           lowB: [
-            { v: "basic", w: 62 },
-            { v: "oddOnly", w: 20 },
-            { v: "leftEvenKetsu", w: 12 },
-            { v: "evenSeq", w: 3 },
-            { v: "leftOddKetsu", w: 1.8 },
-            { v: "zeroSand", w: 0.4 },
-            { v: "oddSand", w: 0.4 },
-            { v: "vHint", w: 0.2 },
-            { v: "sevenHint", w: 0.15 },
-            { v: "oddSeq", w: 0.05 },
+            { v: "basic", w: 68 },
+            { v: "oddOnly", w: 19 },
+            { v: "leftEvenKetsu", w: 10 },
+            { v: "evenSeq", w: 2.5 },
+            { v: "leftOddKetsu", w: 0.5 },
           ],
           normal: [
-            { v: "basic", w: 45 },
-            { v: "oddOnly", w: 23 },
-            { v: "leftEvenKetsu", w: 18 },
-            { v: "evenSeq", w: 7 },
-            { v: "leftOddKetsu", w: 4 },
-            { v: "zeroSand", w: 0.9 },
-            { v: "oddSand", w: 0.9 },
-            { v: "vHint", w: 0.5 },
-            { v: "sevenHint", w: 0.5 },
-            { v: "oddSeq", w: 0.2 },
+            { v: "basic", w: 54 },
+            { v: "oddOnly", w: 22 },
+            { v: "leftEvenKetsu", w: 17 },
+            { v: "evenSeq", w: 5 },
+            { v: "leftOddKetsu", w: 2 },
           ],
           prepA: [
-            { v: "basic", w: 24 },
-            { v: "oddOnly", w: 16 },
-            { v: "leftEvenKetsu", w: 17 },
-            { v: "evenSeq", w: 14 },
-            { v: "leftOddKetsu", w: 10 },
-            { v: "zeroSand", w: 5 },
-            { v: "oddSand", w: 5 },
-            { v: "vHint", w: 3 },
-            { v: "sevenHint", w: 2.5 },
-            { v: "oddSeq", w: 2 },
-            { v: "vStrong", w: 1 },
-            { v: "sevenStrong", w: 0.05 },
+            { v: "basic", w: 35 },
+            { v: "oddOnly", w: 17 },
+            { v: "leftEvenKetsu", w: 18 },
+            { v: "evenSeq", w: 13 },
+            { v: "leftOddKetsu", w: 8 },
+            { v: "zeroSand", w: 2.5 },
+            { v: "oddSand", w: 2.5 },
+            { v: "vHint", w: 1.2 },
+            { v: "sevenHint", w: 1 },
+            { v: "oddSeq", w: 0.7 },
+            { v: "vStrong", w: 0.1 },
           ],
           v: [
-            { v: "basic", w: 12 },
-            { v: "oddOnly", w: 8 },
-            { v: "leftEvenKetsu", w: 10 },
-            { v: "evenSeq", w: 8 },
+            { v: "basic", w: 18 },
+            { v: "oddOnly", w: 10 },
+            { v: "leftEvenKetsu", w: 12 },
+            { v: "evenSeq", w: 9 },
             { v: "leftOddKetsu", w: 8 },
-            { v: "zeroSand", w: 4 },
-            { v: "oddSand", w: 5 },
-            { v: "vHint", w: 28 },
-            { v: "vStrong", w: 14 },
-            { v: "sevenHint", w: 1.5 },
-            { v: "oddSeq", w: 1 },
-            { v: "sevenStrong", w: 0.05 },
+            { v: "zeroSand", w: 2 },
+            { v: "oddSand", w: 3 },
+            { v: "vHint", w: 26 },
+            { v: "vStrong", w: 11 },
+            { v: "sevenHint", w: 0.6 },
+            { v: "oddSeq", w: 0.4 },
           ],
           heavenS: [
-            { v: "basic", w: 14 },
-            { v: "oddOnly", w: 10 },
-            { v: "leftEvenKetsu", w: 9 },
-            { v: "evenSeq", w: 10 },
+            { v: "basic", w: 22 },
+            { v: "oddOnly", w: 13 },
+            { v: "leftEvenKetsu", w: 12 },
+            { v: "evenSeq", w: 11 },
             { v: "leftOddKetsu", w: 12 },
-            { v: "zeroSand", w: 8 },
-            { v: "oddSand", w: 10 },
-            { v: "vHint", w: 8 },
-            { v: "vStrong", w: 7 },
-            { v: "sevenHint", w: 5 },
-            { v: "oddSeq", w: 4 },
+            { v: "zeroSand", w: 5 },
+            { v: "oddSand", w: 7 },
+            { v: "vHint", w: 6 },
+            { v: "vStrong", w: 4 },
+            { v: "sevenHint", w: 3 },
+            { v: "oddSeq", w: 3 },
             { v: "sevenStrong", w: 0.05 },
           ],
           heavenL: [
-            { v: "basic", w: 10 },
-            { v: "oddOnly", w: 8 },
-            { v: "leftEvenKetsu", w: 7 },
-            { v: "evenSeq", w: 9 },
-            { v: "leftOddKetsu", w: 12 },
-            { v: "zeroSand", w: 10 },
-            { v: "oddSand", w: 12 },
-            { v: "vHint", w: 8 },
-            { v: "vStrong", w: 9 },
-            { v: "sevenHint", w: 6 },
-            { v: "oddSeq", w: 5 },
+            { v: "basic", w: 17 },
+            { v: "oddOnly", w: 11 },
+            { v: "leftEvenKetsu", w: 10 },
+            { v: "evenSeq", w: 11 },
+            { v: "leftOddKetsu", w: 13 },
+            { v: "zeroSand", w: 7 },
+            { v: "oddSand", w: 8 },
+            { v: "vHint", w: 7 },
+            { v: "vStrong", w: 5 },
+            { v: "sevenHint", w: 4 },
+            { v: "oddSeq", w: 4 },
             { v: "sevenStrong", w: 0.1 },
           ],
           super: [
-            { v: "basic", w: 6 },
-            { v: "oddOnly", w: 6 },
-            { v: "leftEvenKetsu", w: 5 },
-            { v: "evenSeq", w: 7 },
-            { v: "leftOddKetsu", w: 10 },
-            { v: "zeroSand", w: 11 },
-            { v: "oddSand", w: 13 },
-            { v: "vHint", w: 8 },
-            { v: "vStrong", w: 11 },
-            { v: "sevenHint", w: 8 },
-            { v: "oddSeq", w: 7 },
-            { v: "sevenStrong", w: 8 },
+            { v: "basic", w: 10 },
+            { v: "oddOnly", w: 8 },
+            { v: "leftEvenKetsu", w: 7 },
+            { v: "evenSeq", w: 8 },
+            { v: "leftOddKetsu", w: 12 },
+            { v: "zeroSand", w: 8 },
+            { v: "oddSand", w: 12 },
+            { v: "vHint", w: 7 },
+            { v: "vStrong", w: 8 },
+            { v: "sevenHint", w: 7 },
+            { v: "oddSeq", w: 6 },
+            { v: "sevenStrong", w: 7 },
           ],
         };
         return groupEye(pw(tables[mode] || tables.lowA));
@@ -1125,7 +1136,7 @@
           res.direct = true;
           res.sets = 1;
           res.reason = reason;
-          res.role = "reach";
+          if (!res.role || res.role === "none") res.role = "ggwin";
           res.pay = Math.max(res.pay || 0, 30);
           res.note = `${code} 奇数揃い / GG当選`;
           res.autoStop = true;
@@ -1276,16 +1287,7 @@
       function genNormal(forceCeiling = false) {
         let ch = drawRole(),
           h = updH(ch),
-          res = { role: "none", e: nEye(), pay: 0, note: ch.n, child: ch.k };
-        if (["ub", "mb"].includes(ch.k)) res.role = "replay";
-        if (["ly", "ry", "cry", "my"].includes(ch.k)) {
-          res.role = "yellow";
-          res.pay = 8;
-        }
-        if (["oneB", "oneC", "rf"].includes(ch.k)) {
-          res.role = "chance";
-          res.pay = 1;
-        }
+          res = { role: childRole(ch), e: nEye(), pay: childPay(ch), note: ch.n, child: ch.k };
         if (ch.k === "god")
           return {
             role: "god",
@@ -1325,7 +1327,11 @@
           res.reason = "mode";
           res.note = ch.n + " / GG当選";
         }
-        res.e = res.hit ? eyes(pick(REACH)) : res.e;
+        if (res.hit) {
+          // 通常時からの当選は前兆を経て、最終的に奇数/V揃いで告知する。
+          // 当選ゲーム自体にリーチ目を強制表示しない。
+          res.e = res.e || nEye();
+        }
         return res;
       }
       function genPre() {
@@ -1335,17 +1341,8 @@
         const ch = drawRole();
         updH(ch);
 
-        let baseRole = "none";
-        let basePay = 0;
-        if (["ub", "mb"].includes(ch.k)) baseRole = "replay";
-        if (["ly", "ry", "cry", "my"].includes(ch.k)) {
-          baseRole = "yellow";
-          basePay = 8;
-        }
-        if (["oneB", "oneC", "rf"].includes(ch.k)) {
-          baseRole = "chance";
-          basePay = 1;
-        }
+        let baseRole = childRole(ch);
+        let basePay = childPay(ch);
 
         // 前兆中のGOD/赤7は割り込み当選として扱う。
         if (ch.k === "god")
@@ -1375,18 +1372,18 @@
 
         if (st.pre <= 1)
           return {
-            role: "reach",
-            e: eyes(pick(REACH)),
+            role: baseRole,
+            e: normalWinEye(st.holdReason, st.hold),
             pay: basePay,
-            note: "前兆最終 / " + ch.n,
+            note: "前兆最終 / GG告知 / " + ch.n,
             autoStop: true,
           };
 
         let r = Math.random();
         if (r < 0.25)
-          return { role: "chance", e: eyes(pick(CH)), pay: basePay, note: "前兆中 / " + ch.n };
+          return { role: baseRole, e: eyes(pick(CH)), pay: basePay, note: "前兆中 / " + ch.n };
         if (r < 0.38)
-          return { role: "reach", e: eyes(pick(REACH)), pay: basePay, note: "前兆中 / " + ch.n };
+          return { role: baseRole, e: eyes(pick(REACH)), pay: basePay, note: "前兆中 / " + ch.n };
         return { role: baseRole, e: nEye(), pay: basePay, note: "前兆中 / " + ch.n };
       }
       function ggModeStockPercent(k, mode) {
@@ -1426,6 +1423,7 @@
             pay: 120,
             note: "GG中 GOD",
             hit: true,
+            autoStop: true,
             sets: 5,
             reason: "god",
           };
@@ -1436,6 +1434,7 @@
             pay: 80,
             note: "GG中 赤7/S",
             hit: true,
+            autoStop: true,
             sets: 1,
             reason: "red7",
           };
@@ -1475,35 +1474,38 @@
         let r = Math.random();
         if (r < 0.06)
           return {
-            role: "reach",
+            role: "none",
             e: eyes(pick(["135", "315", "V31", "V34", ...REACH.slice(0, 10)])),
             hit: true,
             sets: 1,
             reason: "gzone",
             pay: 0,
-            note: "G-ZONE リーチ目",
+            note: "G-ZONE 当選",
+            autoStop: true,
           };
         if (r < 0.14) {
           let d = pick(["1", "3", "5"]);
           return {
-            role: "reach",
+            role: "none",
             e: [d, d, d],
             hit: true,
             sets: 1,
             reason: "gzone",
             pay: 0,
             note: "G-ZONE 奇数",
+            autoStop: true,
           };
         }
         if (r < 0.17)
           return {
-            role: "vwin",
+            role: "none",
             e: ["V", "V", "V"],
             hit: true,
             sets: 3,
             reason: "v",
             pay: 0,
             note: "G-ZONE V",
+            autoStop: true,
           };
         if (r < 0.18)
           return {
@@ -1514,6 +1516,7 @@
             reason: "god",
             pay: 0,
             note: "G-ZONE 777",
+            autoStop: true,
           };
         return { role: "none", e: eyes(pick(GZ)), pay: 0, note: "G-ZONE中" };
       }
@@ -1529,10 +1532,11 @@
             sets: 5,
             reason: "god",
             endGStop: true,
+            autoStop: true,
           };
         if (r < 0.045)
           return {
-            role: "vwin",
+            role: "none",
             e: ["V", "V", "V"],
             pay: 30,
             note: "G-STOP V揃い",
@@ -1540,11 +1544,12 @@
             sets: 3,
             reason: "v",
             endGStop: true,
+            autoStop: true,
           };
         if (r < 0.135) {
           let d = pick(["1", "3", "5"]);
           return {
-            role: "reach",
+            role: "gstop",
             e: [d, d, d],
             pay: 30,
             note: "G-STOP 奇数揃い",
@@ -1552,26 +1557,30 @@
             sets: 1,
             reason: "gstop",
             endGStop: true,
+            autoStop: true,
           };
         }
         if (r < 0.235)
           return {
-            role: "reach",
+            role: "gstop",
             e: eyes(pick(["135", "315", "V31", "V34", "753"])),
             pay: 30,
-            note: "G-STOP リーチ目",
+            note: "G-STOP 上乗せ",
             hit: true,
             sets: 1,
             reason: "gstopReach",
             keepGStop: true,
+            autoStop: true,
           };
         return { role: "none", e: eyes(pick(GS_MISS)), pay: 0, note: "G-STOP中" };
       }
       function kind(c) {
-        if (REACH.includes(c)) return "リーチ目";
+        // kindは「役」ではなく液晶出目の分類。左下の役表示はres.role側で小役を表示する。
+        if (REACH.includes(c)) return "当選目";
         if (CH.includes(c)) return "チャンス目";
         if (c === "777") return "GOD";
         if (c === "SSS") return "S";
+        if (c === "VVV") return "V揃い";
         if (isOddWin(c)) return "奇数揃い";
         return "通常目";
       }
@@ -1974,10 +1983,11 @@
         st.coin += payout - bet;
         st.spend += bet;
         st.earn += payout;
+        const roleLabel = PAY[st.role] ? PAY[st.role][0] : "";
         st.h.unshift({
           g: st.g,
           e: code,
-          r: PAY[st.role][0],
+          r: roleLabel,
           k: kind(code),
           p: payout,
         });
@@ -2176,7 +2186,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v133_delay_late_eyes";
+      const STORE_KEY = "calc777v137_rare_eye_tighter";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
