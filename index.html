@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v13.7</title>
+    <title>CALC-777 v14.0</title>
     <style>
       * {
         box-sizing: border-box;
@@ -375,6 +375,249 @@
       .spin .reel {
         opacity: 0.65;
       }
+      /* v13.8: 液晶を上下2段に再構成。上=情報、下=ステージ/小役/リール3マス */
+      .lcd {
+        min-height: 132px;
+        padding: 10px;
+      }
+      .lcdMain {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(54px, auto) minmax(50px, 1fr);
+        gap: 8px;
+        align-items: stretch;
+      }
+      .lcdInfo {
+        width: 100%;
+        min-width: 0;
+        border-radius: 10px;
+        border: 1px solid #23311f33;
+        background: #23311f18;
+        padding: 5px 7px;
+        display: grid;
+        grid-template-rows: auto auto;
+        gap: 2px;
+      }
+      .lcdBottom {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+        align-items: stretch;
+        min-width: 0;
+      }
+      .lcdSide,
+      .lcdRight {
+        display: contents;
+      }
+      .lcdLine1,
+      .lcdLine2 {
+        display: grid;
+        align-items: center;
+        min-width: 0;
+      }
+      .lcdLine1 {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 10px;
+      }
+      .lcdLine2 {
+        grid-template-columns: minmax(94px, 1fr) minmax(96px, 1fr);
+        column-gap: 10px;
+      }
+      .line {
+        font-size: clamp(11px, 3.1vw, 13px);
+        line-height: 1.22;
+      }
+      .sub {
+        font-size: clamp(9px, 2.7vw, 11px);
+        line-height: 1.16;
+      }
+      .lcdLine1 > span,
+      .lcdLine2 > span {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: clip;
+      }
+      #statusText {
+        text-align: right;
+        font-size: clamp(10px, 2.8vw, 12px);
+      }
+      .miniLabel {
+        letter-spacing: -0.02em;
+      }
+      .miniNum {
+        letter-spacing: 0;
+      }
+      #statusText .miniLabel {
+        font-size: clamp(9px, 2.4vw, 10px);
+      }
+      #statusText .miniNum {
+        font-size: clamp(11px, 3vw, 14px);
+      }
+      .histText {
+        grid-template-columns: 30px repeat(5, 12px);
+      }
+      .histSym {
+        font-size: 15px;
+      }
+      .lcdBottom .stageBig,
+      .lcdBottom .roleBig {
+        min-height: 48px;
+        height: 48px;
+        padding: 2px 3px;
+        border-radius: 10px;
+      }
+      .lcdBottom .stageMain {
+        font-size: clamp(10px, 2.8vw, 13px);
+      }
+      .lcdBottom .stageSub {
+        font-size: 8px;
+      }
+      .lcdBottom .roleBig {
+        font-size: clamp(10px, 2.8vw, 13px);
+        letter-spacing: -0.04em;
+      }
+      .lcdBottom .reels {
+        grid-column: span 3;
+        width: 100%;
+        margin-top: 0;
+        gap: 6px;
+        align-self: stretch;
+      }
+      .lcdBottom .reel {
+        height: 48px;
+        line-height: 44px;
+        font-size: clamp(27px, 8vw, 34px);
+      }
+      .lcdBottom .reels.atActive {
+        padding: 2px;
+        border-width: 2px;
+      }
+      @media (max-width: 380px) {
+        .lcd {
+          padding: 9px;
+        }
+        .lcdMain {
+          gap: 7px;
+        }
+        .lcdBottom {
+          gap: 5px;
+        }
+        .lcdLine1 {
+          column-gap: 7px;
+        }
+        .lcdLine2 {
+          column-gap: 7px;
+          grid-template-columns: minmax(88px, 1fr) minmax(88px, 1fr);
+        }
+        .histText {
+          grid-template-columns: 27px repeat(5, 11px);
+        }
+        .histSym {
+          width: 11px;
+          font-size: 14px;
+        }
+        .lcdBottom .stageBig,
+        .lcdBottom .roleBig,
+        .lcdBottom .reel {
+          height: 45px;
+          min-height: 45px;
+        }
+        .lcdBottom .reel {
+          line-height: 41px;
+        }
+      }
+      /* v13.9: 上段情報を大きく、リール3図柄を同一パネル化 */
+      .lcdInfo {
+        padding: 6px 8px;
+        gap: 3px;
+      }
+      .line {
+        font-size: clamp(13px, 3.65vw, 16px);
+        line-height: 1.18;
+      }
+      .sub {
+        font-size: clamp(12px, 3.35vw, 15px);
+        line-height: 1.12;
+      }
+      #statusText {
+        font-size: clamp(12px, 3.35vw, 15px);
+      }
+      #statusText .miniLabel {
+        font-size: clamp(11px, 3vw, 13px);
+      }
+      #statusText .miniNum {
+        font-size: clamp(13px, 3.65vw, 16px);
+      }
+      .histText {
+        grid-template-columns: 34px repeat(5, 13px);
+        column-gap: 1px;
+      }
+      .histSym {
+        width: 13px;
+        font-size: 16px;
+      }
+      .lcdBottom .reels {
+        grid-column: span 3;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        align-items: center;
+        min-height: 48px;
+        height: 48px;
+        border-radius: 10px;
+        border: 1px solid #23311f55;
+        background: #23311f24;
+        padding: 3px 7px;
+        box-sizing: border-box;
+      }
+      .lcdBottom .reel {
+        height: 40px;
+        line-height: 38px;
+        min-height: 0;
+        border: none;
+        background: transparent;
+        font-size: clamp(28px, 7.8vw, 34px);
+      }
+      .lcdBottom .reels.atActive {
+        padding: 2px 6px;
+        gap: 8px;
+        border-width: 2px;
+        background: #facc1520;
+      }
+      @media (max-width: 380px) {
+        .line {
+          font-size: clamp(12px, 3.45vw, 15px);
+        }
+        .sub,
+        #statusText {
+          font-size: clamp(11px, 3.15vw, 14px);
+        }
+        #statusText .miniLabel {
+          font-size: clamp(10px, 2.75vw, 12px);
+        }
+        #statusText .miniNum {
+          font-size: clamp(12px, 3.35vw, 15px);
+        }
+        .histText {
+          grid-template-columns: 30px repeat(5, 12px);
+        }
+        .histSym {
+          width: 12px;
+          font-size: 15px;
+        }
+        .lcdBottom .reels {
+          gap: 6px;
+          padding: 3px 5px;
+          height: 45px;
+          min-height: 45px;
+        }
+        .lcdBottom .reel {
+          height: 37px;
+          line-height: 35px;
+          font-size: clamp(26px, 7.4vw, 31px);
+        }
+      }
       .keys {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -456,6 +699,67 @@
         padding: 8px;
         font-size: 11px;
       }
+      .dataStats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        margin-top: 8px;
+        font-size: 10px;
+      }
+      .dataStats span {
+        display: block;
+        background: #27272a;
+        border-radius: 9px;
+        padding: 6px 4px;
+        text-align: center;
+        color: #cbd5e1;
+        white-space: nowrap;
+      }
+      .dataStats b {
+        display: block;
+        margin-top: 2px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .slumpBox {
+        margin-top: 8px;
+        border-radius: 12px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        padding: 7px;
+      }
+      .slumpTitle {
+        display: flex;
+        justify-content: space-between;
+        color: #cbd5e1;
+        font-size: 10px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .slumpSvg {
+        display: block;
+        width: 100%;
+        height: 118px;
+      }
+      .slumpGrid {
+        stroke: #334155;
+        stroke-width: 1;
+        opacity: 0.7;
+      }
+      .slumpZero {
+        stroke: #94a3b8;
+        stroke-width: 1.2;
+        opacity: 0.9;
+      }
+      .slumpLine {
+        fill: none;
+        stroke: #60a5fa;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
       .dbgSec {
         margin-top: 10px;
       }
@@ -490,7 +794,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v13.7</div>
+        <div>▣ CALC-777 v14.0</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -504,21 +808,19 @@
               </div>
             </div>
             <div class="lcdMain">
-              <div class="lcdSide">
+              <div class="lcdInfo">
+                <div id="ga" class="line lcdLine1">
+                  <span id="gameText">G数：000000</span>
+                  <span id="coinText">Coin：000000</span>
+                </div>
+                <div id="lh" class="sub lcdLine2">
+                  <span id="histText" class="histText"><span class="histLabel">履歴：</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span></span>
+                  <span id="statusText">GG:--- ST:---</span>
+                </div>
+              </div>
+              <div class="lcdBottom">
                 <div id="stageBig" class="stageBig"><span class="stageMain">湖</span></div>
                 <div id="roleBig" class="roleBig">ハズレ</div>
-              </div>
-              <div class="lcdRight">
-                <div class="lcdInfo">
-                  <div id="ga" class="line lcdLine1">
-                    <span id="gameText">G数：000000</span>
-                    <span id="coinText">Coin：000000</span>
-                  </div>
-                  <div id="lh" class="sub lcdLine2">
-                    <span id="histText" class="histText"><span class="histLabel">履歴：</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span><span class="histSym">-</span></span>
-                    <span id="statusText">GG:--- ST:---</span>
-                  </div>
-                </div>
                 <div id="re" class="reels">
                   <div class="reel"><span class="reelSym reelGreen">0</span></div>
                   <div class="reel"><span class="reelSym reelRed">1</span></div>
@@ -685,6 +987,7 @@
         dummy: false,
         dummyValue: "0",
         delayed: false,
+        coinLog: [0],
       };
       let autoLeft = 0;
       const AUTO_NEXT_DELAY = 520;
@@ -1725,6 +2028,35 @@
         };
         return names[st.ggStage] || st.ggStage || "---";
       }
+      function slumpSvg() {
+        const log = (st.coinLog && st.coinLog.length ? st.coinLog : [0]).slice(-240);
+        const w = 320;
+        const h = 118;
+        const pad = 10;
+        const vals = log.concat([0]);
+        let min = Math.min(...vals);
+        let max = Math.max(...vals);
+        if (min === max) {
+          min -= 10;
+          max += 10;
+        }
+        const range = max - min || 1;
+        const x = (i) => pad + (log.length <= 1 ? 0 : (i / (log.length - 1)) * (w - pad * 2));
+        const y = (v) => h - pad - ((v - min) / range) * (h - pad * 2);
+        const pts = log.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+        const zeroY = y(0).toFixed(1);
+        const gridY1 = (pad + (h - pad * 2) / 3).toFixed(1);
+        const gridY2 = (pad + ((h - pad * 2) * 2) / 3).toFixed(1);
+        return `<div class="slumpBox">
+          <div class="slumpTitle"><span>スランプグラフ</span><span>現在 ${st.coin}枚</span></div>
+          <svg class="slumpSvg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="持ちコイン推移">
+            <line class="slumpGrid" x1="${pad}" y1="${gridY1}" x2="${w - pad}" y2="${gridY1}"></line>
+            <line class="slumpGrid" x1="${pad}" y1="${gridY2}" x2="${w - pad}" y2="${gridY2}"></line>
+            <line class="slumpZero" x1="${pad}" y1="${zeroY}" x2="${w - pad}" y2="${zeroY}"></line>
+            <polyline class="slumpLine" points="${pts}"></polyline>
+          </svg>
+        </div>`;
+      }
       function panel() {
         let p = $("pa");
         if (!st.panel) {
@@ -1735,7 +2067,7 @@
         p.className = "p show";
         let net = st.earn - st.spend;
         if (st.panel === "data")
-          p.innerHTML = `<b>▣ 収支</b><div class="grid"><div class="card">投入<b>${st.spend}</b></div><div class="card">払出<b>${st.earn}</b></div><div class="card">差枚<b>${net}</b></div><div class="card">回転<b>${st.g}</b></div></div>`;
+          p.innerHTML = `<b>▣ DATA</b><div class="dataStats"><span>投入<b>${st.spend}</b></span><span>払出<b>${st.earn}</b></span><span>差枚<b>${net}</b></span><span>回転<b>${st.g}</b></span></div>${slumpSvg()}`;
         if (st.panel === "mode")
           p.innerHTML = `<b>▣ 状態</b><div>現在: <b>${M[st.mode]?.[0] || st.phase}</b></div><div>ステージ: <b>${stageLabel()}</b></div><div class="small">天井まで: ${Math.max(0, CEILING_G - (st.tenjoG || 0))}G / G-STOP保持: ${st.gstopStock || 0}</div>`;
         if (st.panel === "hist")
@@ -1983,6 +2315,9 @@
         st.coin += payout - bet;
         st.spend += bet;
         st.earn += payout;
+        st.coinLog = st.coinLog || [0];
+        st.coinLog.push(st.coin);
+        st.coinLog = st.coinLog.slice(-240);
         const roleLabel = PAY[st.role] ? PAY[st.role][0] : "";
         st.h.unshift({
           g: st.g,
@@ -2028,6 +2363,7 @@
               if (++n > maxFrames) {
                 clearInterval(t);
                 st.delayed = false;
+              st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog.slice(-240) : [st.coin || 0];
                 return applySpinOutcome(out);
               }
             }, tickMs);
@@ -2069,6 +2405,7 @@
           dummy: false,
           dummyValue: "0",
           delayed: false,
+          coinLog: [0],
         };
         save();
         render();
@@ -2186,7 +2523,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v137_rare_eye_tighter";
+      const STORE_KEY = "calc777v140_data_slump_autokeep";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
@@ -2206,6 +2543,7 @@
               st.dummy = !!st.dummy;
               st.dummyValue = st.dummyValue || "0";
               st.delayed = false;
+              st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog.slice(-240) : [st.coin || 0];
             }
           } catch (e) {
             localStorage.removeItem(STORE_KEY);
@@ -2238,7 +2576,10 @@
       }
       document.addEventListener(
         "pointerdown",
-        () => {
+        (e) => {
+          const b = e.target.closest && e.target.closest("button");
+          const k = b && b.dataset ? b.dataset.k : "";
+          if (k === "DATA" || k === "MODE") return;
           if (autoLeft !== 0) stopAuto("AUTO停止");
         },
         { passive: true },
