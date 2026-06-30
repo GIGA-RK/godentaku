@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v12.5</title>
+    <title>CALC-777 v13.3</title>
     <style>
       * {
         box-sizing: border-box;
@@ -288,6 +288,51 @@
         background: #facc1520;
         box-shadow: inset 0 0 0 1px #92400e55;
       }
+      .dummyCalc .ggBanner {
+        display: none !important;
+      }
+      .dummyCalc .lcdMain {
+        display: none;
+      }
+      .dummyScreen {
+        display: none;
+        min-height: 76px;
+        align-items: stretch;
+      }
+      .dummyCalc .dummyScreen {
+        display: grid;
+      }
+      .dummyBox {
+        border-radius: 12px;
+        border: 1px solid #23311f55;
+        background: #23311f24;
+        padding: 8px 9px;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-width: 0;
+      }
+      .dummyTop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 900;
+        opacity: 0.72;
+        letter-spacing: 0.02em;
+      }
+      .dummyValue {
+        align-self: end;
+        text-align: right;
+        font-family: "Helvetica Neue", "Arial Narrow", Arial, sans-serif;
+        font-weight: 300;
+        font-size: 30px;
+        line-height: 1.05;
+        letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+      }
       .reels {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -306,9 +351,29 @@
         background: #23311f38;
         border: 1px solid #23311f55;
       }
+      .reelSym {
+        display: inline-block;
+        font-weight: 950;
+        line-height: 1;
+      }
+      .reelRed {
+        color: #991b1b;
+      }
+      .reelYellow {
+        color: #a16207;
+      }
+      .reelGreen {
+        color: #166534;
+      }
+      .reelRainbow {
+        color: transparent;
+        background: linear-gradient(90deg, #dc2626, #f97316, #eab308, #16a34a, #2563eb, #7c3aed);
+        -webkit-background-clip: text;
+        background-clip: text;
+        text-shadow: none;
+      }
       .spin .reel {
         opacity: 0.65;
-        transform: translateY(-5px);
       }
       .keys {
         display: grid;
@@ -425,13 +490,19 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v12.5</div>
+        <div>▣ CALC-777 v13.3</div>
         <div>calculator</div>
       </div>
       <section class="calc">
         <div id="fr" class="fr lowA">
           <div class="lcd">
             <div id="ggBanner" class="ggBanner">GOD GAME中</div>
+            <div id="dummyScreen" class="dummyScreen">
+              <div class="dummyBox">
+                <div class="dummyTop"><span>CALC</span><span>DEG</span></div>
+                <div id="dummyValue" class="dummyValue">0</div>
+              </div>
+            </div>
             <div class="lcdMain">
               <div class="lcdSide">
                 <div id="stageBig" class="stageBig"><span class="stageMain">湖</span></div>
@@ -449,9 +520,9 @@
                   </div>
                 </div>
                 <div id="re" class="reels">
-                  <div class="reel">0</div>
-                  <div class="reel">0</div>
-                  <div class="reel">0</div>
+                  <div class="reel"><span class="reelSym reelGreen">0</span></div>
+                  <div class="reel"><span class="reelSym reelRed">1</span></div>
+                  <div class="reel"><span class="reelSym reelYellow">2</span></div>
                 </div>
               </div>
             </div>
@@ -515,6 +586,7 @@
         ["three", "3枚役", 1.8, "three", 3],
         ["py", "押し順15枚黄7", 4.4, "navYellow", 15],
         ["ub", "上段青7", 5.4, "replay", 0],
+        ["haz", "ハズレ", 655.4, "none", 0],
         ["oneB", "1枚役", 102.4, "chance", 1],
         ["oneC", "1枚役", 409.6, "chance", 1],
         ["mb", "中段青7", 99.9, "replay", 0],
@@ -554,9 +626,30 @@
           "101 303 505 707 100 300 500 V0V V2V V4V V6V V8V 38V 468 631 831".split(
             " ",
           ),
-        GZ = "135 315 V31 V34 113 331 553 V1V V3V V5V".split(" "),
+        // G-ZONEの通常ハズレ枠。REACHに含まれる 135/315/V31/V34 は通常枠から除外。
+        GZ = "113 331 553 V1V V3V V5V".split(" "),
         ALL = new Set([...REACH, ...CH, ...GZ, "777", "SSS", "VVV"]),
-        ODD_WIN = new Set(["111", "333", "555"]);
+        ODD_WIN = new Set(["111", "333", "555"]),
+        EYE_GROUPS = {
+          basic: "153 124 251 361 436 508 681 845 850 801".split(" "),
+          oddOnly: "131 151 315 351 513 531 535 551".split(" "),
+          leftEvenKetsu: "211 233 411 433 611 633 811 833".split(" "),
+          evenSeq: "234 456 678".split(" "),
+          leftOddKetsu: "155 311 355 511 533 711 733 755".split(" "),
+          oddSeq: "345 567".split(" "),
+          zeroSand: "010 030 050 070".split(" "),
+          oddSand: "131 151 313 353 515 535".split(" "),
+          vHint: "V0V V2V V4V V6V V8V 12V 35V 68V 1V5 V46".split(" "),
+          vStrong: "V1V V3V V5V".split(" "),
+          sevenHint: "177 377 577".split(" "),
+          sevenStrong: "700 V7V".split(" "),
+          heavenV7: "V00 V77".split(" "),
+          delay70: "701 703 705".split(" "),
+          delay7Sand: "727 747 767 787".split(" "),
+          gstopWeak: "017 01V 022".split(" "),
+          gstopStrong: "00V 011 020 0V7".split(" "),
+        },
+        GS_MISS = "131 151 313 353 515 535 V1V V3V V5V V7V 171 373 575".split(" ");
       let st = {
         g: 0,
         coin: 0,
@@ -564,7 +657,7 @@
         earn: 0,
         mode: "lowA",
         phase: "normal",
-        e: ["0", "0", "0"],
+        e: ["0", "1", "2"],
         role: "none",
         spin: false,
         panel: null,
@@ -588,8 +681,12 @@
         normalStage: "湖",
         stageGames: 0,
         forceRole: null,
+        dummy: false,
+        dummyValue: "0",
+        delayed: false,
       };
       let autoLeft = 0;
+      const AUTO_NEXT_DELAY = 520;
       const $ = (id) => document.getElementById(id),
         pick = (a) => a[Math.floor(Math.random() * a.length)];
       function pw(a) {
@@ -727,45 +824,136 @@
           st.stageGames--;
         }
       }
-      function cand() {
-        const o = ["1", "3", "5"];
-        let t = pw([
-          { v: "ot", w: 35 },
-          { v: "oo", w: 8 },
-          { v: "eot", w: 7 },
-          { v: "seq", w: 2 },
-          { v: "v", w: 7 },
-          { v: "l7", w: 1 },
-        ]);
-        if (t === "ot") {
-          let a = pick(o),
-            b = pick(SY.filter((x) => x !== a && x !== "7" && x !== "V"));
-          return a + a + b;
-        }
-        if (t === "oo") return pick(o) + pick(o) + pick(o);
-        if (t === "eot") {
-          let a = pick(["2", "4", "6", "8"]),
-            b = pick(o);
-          return a + b + b;
-        }
-        if (t === "seq") return pick(["234", "456", "678"]);
-        if (t === "v") return pick(["V12", "2V4", "35V", "V46", "68V", "1V5"]);
-        if (t === "l7")
-          return (
-            "7" +
-            pick(["0", "2", "4", "6", "8"]) +
-            pick(["0", "1", "2", "3", "4", "5", "6", "8", "V"])
-          );
-        return "153";
+      function groupEye(group) {
+        return pick(EYE_GROUPS[group] || EYE_GROUPS.basic);
       }
-      function nEye() {
+      function isBlockedNormalEye(s) {
+        return REACH.includes(s) || bad7(s) || isOddWin(s) || ["777", "SSS", "VVV"].includes(s);
+      }
+      function weightedModeEye(mode = st.mode) {
+        // 出目示唆を強めにモード連動させる。
+        // 低確〜通常では強い示唆目をかなり抑え、天国準備以上から段階的に増やす。
+        const tables = {
+          lowA: [
+            { v: "basic", w: 76 },
+            { v: "oddOnly", w: 16 },
+            { v: "leftEvenKetsu", w: 6 },
+            { v: "evenSeq", w: 1.2 },
+            { v: "leftOddKetsu", w: 0.5 },
+            { v: "zeroSand", w: 0.1 },
+            { v: "oddSand", w: 0.1 },
+            { v: "vHint", w: 0.05 },
+            { v: "sevenHint", w: 0.04 },
+            { v: "oddSeq", w: 0.01 },
+          ],
+          lowB: [
+            { v: "basic", w: 62 },
+            { v: "oddOnly", w: 20 },
+            { v: "leftEvenKetsu", w: 12 },
+            { v: "evenSeq", w: 3 },
+            { v: "leftOddKetsu", w: 1.8 },
+            { v: "zeroSand", w: 0.4 },
+            { v: "oddSand", w: 0.4 },
+            { v: "vHint", w: 0.2 },
+            { v: "sevenHint", w: 0.15 },
+            { v: "oddSeq", w: 0.05 },
+          ],
+          normal: [
+            { v: "basic", w: 45 },
+            { v: "oddOnly", w: 23 },
+            { v: "leftEvenKetsu", w: 18 },
+            { v: "evenSeq", w: 7 },
+            { v: "leftOddKetsu", w: 4 },
+            { v: "zeroSand", w: 0.9 },
+            { v: "oddSand", w: 0.9 },
+            { v: "vHint", w: 0.5 },
+            { v: "sevenHint", w: 0.5 },
+            { v: "oddSeq", w: 0.2 },
+          ],
+          prepA: [
+            { v: "basic", w: 24 },
+            { v: "oddOnly", w: 16 },
+            { v: "leftEvenKetsu", w: 17 },
+            { v: "evenSeq", w: 14 },
+            { v: "leftOddKetsu", w: 10 },
+            { v: "zeroSand", w: 5 },
+            { v: "oddSand", w: 5 },
+            { v: "vHint", w: 3 },
+            { v: "sevenHint", w: 2.5 },
+            { v: "oddSeq", w: 2 },
+            { v: "vStrong", w: 1 },
+            { v: "sevenStrong", w: 0.05 },
+          ],
+          v: [
+            { v: "basic", w: 12 },
+            { v: "oddOnly", w: 8 },
+            { v: "leftEvenKetsu", w: 10 },
+            { v: "evenSeq", w: 8 },
+            { v: "leftOddKetsu", w: 8 },
+            { v: "zeroSand", w: 4 },
+            { v: "oddSand", w: 5 },
+            { v: "vHint", w: 28 },
+            { v: "vStrong", w: 14 },
+            { v: "sevenHint", w: 1.5 },
+            { v: "oddSeq", w: 1 },
+            { v: "sevenStrong", w: 0.05 },
+          ],
+          heavenS: [
+            { v: "basic", w: 14 },
+            { v: "oddOnly", w: 10 },
+            { v: "leftEvenKetsu", w: 9 },
+            { v: "evenSeq", w: 10 },
+            { v: "leftOddKetsu", w: 12 },
+            { v: "zeroSand", w: 8 },
+            { v: "oddSand", w: 10 },
+            { v: "vHint", w: 8 },
+            { v: "vStrong", w: 7 },
+            { v: "sevenHint", w: 5 },
+            { v: "oddSeq", w: 4 },
+            { v: "sevenStrong", w: 0.05 },
+          ],
+          heavenL: [
+            { v: "basic", w: 10 },
+            { v: "oddOnly", w: 8 },
+            { v: "leftEvenKetsu", w: 7 },
+            { v: "evenSeq", w: 9 },
+            { v: "leftOddKetsu", w: 12 },
+            { v: "zeroSand", w: 10 },
+            { v: "oddSand", w: 12 },
+            { v: "vHint", w: 8 },
+            { v: "vStrong", w: 9 },
+            { v: "sevenHint", w: 6 },
+            { v: "oddSeq", w: 5 },
+            { v: "sevenStrong", w: 0.1 },
+          ],
+          super: [
+            { v: "basic", w: 6 },
+            { v: "oddOnly", w: 6 },
+            { v: "leftEvenKetsu", w: 5 },
+            { v: "evenSeq", w: 7 },
+            { v: "leftOddKetsu", w: 10 },
+            { v: "zeroSand", w: 11 },
+            { v: "oddSand", w: 13 },
+            { v: "vHint", w: 8 },
+            { v: "vStrong", w: 11 },
+            { v: "sevenHint", w: 8 },
+            { v: "oddSeq", w: 7 },
+            { v: "sevenStrong", w: 8 },
+          ],
+        };
+        return groupEye(pw(tables[mode] || tables.lowA));
+      }
+      function cand(mode = st.mode) {
+        return weightedModeEye(mode);
+      }
+      function nEye(mode = st.mode) {
         let s,
           l = 0;
         do {
-          s = cand();
+          s = cand(mode);
           l++;
-        } while ((ALL.has(s) || bad7(s) || isOddWin(s)) && l < 80);
-        return eyes(!ALL.has(s) && !bad7(s) && !isOddWin(s) ? s : "153");
+        } while (isBlockedNormalEye(s) && l < 80);
+        return eyes(!isBlockedNormalEye(s) ? s : "153");
       }
       function consumeForcedRole(list) {
         if (!st.forceRole) return null;
@@ -1124,6 +1312,9 @@
           };
 
         applyNormalHistory(res, h);
+        if (!res.hit && res.gstopNow) {
+          res.e = eyes(pick(h.b >= 4 ? EYE_GROUPS.gstopStrong : EYE_GROUPS.gstopWeak));
+        }
 
         if (!res.hit && forceCeiling) {
           setHit(res, 1, "tenjo", `天井${CEILING_G}G`);
@@ -1374,7 +1565,7 @@
             reason: "gstopReach",
             keepGStop: true,
           };
-        return { role: "none", e: nEye(), pay: 0, note: "G-STOP中" };
+        return { role: "none", e: eyes(pick(GS_MISS)), pay: 0, note: "G-STOP中" };
       }
       function kind(c) {
         if (REACH.includes(c)) return "リーチ目";
@@ -1472,6 +1663,16 @@
         }
         return `<span class="stageMain">${st.normalStage || "湖"}</span>`;
       }
+      function reelClass(x) {
+        if (["1", "3", "5", "V"].includes(x)) return "reelRed";
+        if (["2", "4", "6", "8"].includes(x)) return "reelYellow";
+        if (x === "0") return "reelGreen";
+        if (x === "7") return "reelRainbow";
+        return "";
+      }
+      function reelHtml(x) {
+        return `<div class="reel"><span class="reelSym ${reelClass(x)}">${x}</span></div>`;
+      }
       function normalizeDisplayState() {
         if (
           st.ggRemain <= 0 &&
@@ -1492,18 +1693,17 @@
             : st.gstop > 0
               ? M.gstop
               : M[st.mode] || M.lowA;
-        $("fr").className = "fr " + mi[1];
+        $("fr").className = "fr " + mi[1] + (st.dummy ? " dummyCalc" : "");
+        $("dummyValue").textContent = st.dummyValue || "0";
         $("stageBig").innerHTML = stayStageHtml();
         $("roleBig").textContent = PAY[st.role][0];
         $("gameText").innerHTML = formatGameText();
         $("coinText").innerHTML = formatCoinText();
         $("histText").innerHTML = fixedHistHtml();
         $("statusText").innerHTML = formatStatusText();
-        $("ggBanner").classList.toggle("show", st.ggRemain > 0);
+        $("ggBanner").classList.toggle("show", st.ggRemain > 0 && !st.dummy);
         $("re").className = `reels${st.ggRemain > 0 ? " atActive" : ""}`;
-        $("re").innerHTML = st.e
-          .map((x) => `<div class="reel">${x}</div>`)
-          .join("");
+        $("re").innerHTML = st.e.map(reelHtml).join("");
         document.body.classList.toggle("spin", st.spin);
         panel();
       }
@@ -1568,20 +1768,218 @@
               </div>
             </div>`;
       }
+      function percent(p) {
+        return Math.random() < p / 100;
+      }
+      function shouldDelay(out) {
+        const res = out?.res || {};
+        const k = res.child || "";
+        // 実機寄せ: GG中は遅れなし。
+        if (st.ggRemain > 0 || st.gzone > 0 || st.gstop > 0) return false;
+
+        if (k === "god") return percent(16.41);
+        if (["red7", "red7m", "sp"].includes(k) || res.role === "red7") return percent(10.94);
+        if (["rf", "rfA", "rfB"].includes(k)) return percent(8);
+
+        // 前兆示唆。前兆中・前兆当選ゲームでは少しだけ出る。
+        if (st.pre > 0 || res.hit || res.gstopNow) return percent(3.5);
+
+        // 高モード示唆。低確/通常ではかなり薄く、天国系でだけ現実的に出る。
+        const p = {
+          lowA: 0.01,
+          lowB: 0.03,
+          normal: 0.05,
+          prepA: 0.35,
+          v: 0.45,
+          heavenS: 1.1,
+          heavenL: 1.6,
+          super: 3.2,
+        }[st.mode] || 0.02;
+        return percent(p);
+      }
+      function applyDelayEye(res) {
+        if (!res || res.hit || res.direct) return res;
+
+        // 遅れ＋高モード示唆専用出目。通常候補には混ぜない。
+        if (st.mode === "super" && percent(35)) {
+          res.e = eyes(groupEye("sevenStrong")); // 700 / V7V
+          res.note = (res.note || "") + " / 遅れ超天示唆";
+          return res;
+        }
+        if (["heavenS", "heavenL", "super"].includes(st.mode) && percent(35)) {
+          res.e = eyes(groupEye("heavenV7")); // V00 / V77
+          res.note = (res.note || "") + " / 遅れ天国示唆";
+          return res;
+        }
+        if (["prepA", "v", "heavenS", "heavenL", "super"].includes(st.mode)) {
+          res.e = eyes(groupEye(percent(50) ? "delay70" : "delay7Sand")); // 701/703/705 or 727/747/767/787
+          res.note = (res.note || "") + " / 遅れ高モード示唆";
+        }
+        return res;
+      }
+      function prepareSpinOutcome() {
+        let res,
+          pay = 0,
+          nm = st.mode,
+          branch = "normal";
+
+        if (st.ggRemain > 0) {
+          branch = "gg";
+          res = forceOddWinIfNeeded(genGG(), "ggOdd");
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
+        if (st.gstop > 0) {
+          branch = "gstop";
+          res = forceOddWinIfNeeded(genGS(), "gstopOdd");
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
+        if (st.gzone > 0) {
+          branch = "gzone";
+          res = forceOddWinIfNeeded(genGZ(), "gzoneOdd");
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
+        if (st.pre > 0) {
+          branch = "pre";
+          st.tenjoG = (st.tenjoG || 0) + 1;
+          res = genPre();
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
+
+        st.tenjoG = (st.tenjoG || 0) + 1;
+        res = forceOddWinIfNeeded(genNormal(st.tenjoG >= CEILING_G));
+        pay = res.pay || 0;
+        nm = res.child ? trans({ k: res.child }) : st.mode;
+        return { branch, res, pay, nm };
+      }
+      function applySpinOutcome(out) {
+        let { branch, res } = out,
+          pay = out.pay || 0,
+          nm = out.nm || st.mode;
+
+        if (branch === "gg") {
+          if (res.hit) {
+            st.stock += res.sets || 1;
+            st.note = res.note;
+          }
+          st.ggRemain--;
+          if (st.ggRemain <= 0) endGG();
+          return finish(res, pay, st.mode);
+        }
+
+        if (branch === "gstop") {
+          if (res.hit && (res.endGStop || res.direct)) {
+            st.gstop = 0;
+            startGG(res.sets || 1, res.reason);
+            nm = "gg";
+          } else if (res.hit && res.keepGStop) {
+            st.stock += res.sets || 1;
+            st.gstopHit = true;
+            st.note = res.note + " / GG保持";
+            st.gstop--;
+            if (st.gstop <= 0) {
+              startGG(1, "gstop");
+              nm = "gg";
+            } else {
+              nm = "gstop";
+            }
+          } else {
+            st.gstop--;
+            if (st.gstop <= 0) {
+              if (st.gstopHit) {
+                startGG(1, "gstop");
+                nm = "gg";
+              } else if ((st.gstopStock || 0) > 0) {
+                startGStop("G-STOP再放出");
+                nm = "gstop";
+              } else {
+                st.mode = "lowA";
+                st.phase = "normal";
+                st.note = "G-STOP終了";
+                nm = "lowA";
+              }
+            } else {
+              nm = "gstop";
+            }
+          }
+          return finish(res, pay, nm);
+        }
+
+        if (branch === "gzone") {
+          if (res.hit) {
+            startGG(res.sets || 1, res.reason);
+            pay += 30;
+            nm = "gg";
+          } else {
+            st.gzone--;
+            if (st.gzone <= 0) {
+              st.mode = "lowA";
+              st.phase = "normal";
+              st.note = "G-ZONE終了";
+              nm = "lowA";
+            }
+          }
+          return finish(res, pay, nm);
+        }
+
+        if (branch === "pre") {
+          st.pre--;
+
+          if (res.direct) {
+            st.pending = false;
+            startGG(res.sets || 1, res.reason);
+            nm = "gg";
+            return finish(res, pay, nm);
+          }
+
+          if (st.pre <= 0 && st.pending) {
+            startGG(st.hold || 1, st.holdReason);
+            st.pending = false;
+            res.hit = true;
+            res.autoStop = true;
+            nm = "gg";
+          }
+          return finish(res, pay, nm);
+        }
+
+        if (res.direct) {
+          startGG(res.sets || 1, res.reason);
+          nm = "gg";
+        } else if (res.hit) {
+          startPre(res.sets || 1, res.reason || "mode", res.note);
+          pay = 0;
+          nm = st.mode;
+        } else if (res.gstopNow && (st.gstopStock || 0) > 0) {
+          startGStop(res.note);
+          nm = "gstop";
+        }
+        return finish(res, pay, nm);
+      }
+      function spinPreviewEye() {
+        if (st.gstop > 0) return eyes(pick(GS_MISS));
+        if (st.gzone > 0) return eyes(pick(GZ));
+        return nEye();
+      }
       function finish(res, pay, nm) {
         let code = res.e.join("");
         st.e = res.e;
         st.role = res.role || "none";
         st.mode = nm || st.mode;
         st.g++;
-        st.coin += pay;
-        st.earn += pay;
+        const bet = 3;
+        const payout = pay || 0;
+        st.coin += payout - bet;
+        st.spend += bet;
+        st.earn += payout;
         st.h.unshift({
           g: st.g,
           e: code,
           r: PAY[st.role][0],
           k: kind(code),
-          p: pay,
+          p: payout,
         });
         st.h = st.h.slice(0, 30);
         maybeStageChange(false, st.mode);
@@ -1589,131 +1987,41 @@
         st.spin = false;
         save();
         render();
-        if (autoLeft !== 0) setTimeout(spin, 70);
+        if (autoLeft !== 0) setTimeout(spin, AUTO_NEXT_DELAY);
       }
       function spin() {
         if (st.spin) return;
         if (autoLeft > 0) autoLeft--;
+
+        const out = prepareSpinOutcome();
+        const delayed = shouldDelay(out);
+        if (delayed) {
+          out.res = applyDelayEye(out.res);
+          st.delayed = true;
+          st.note = (out.res.note || "") + " / 遅れ";
+        } else {
+          st.delayed = false;
+        }
+
         st.spin = true;
-        st.coin -= 3;
-        st.spend += 3;
         render();
-        let n = 0,
-          t = setInterval(() => {
-            st.e = st.gzone > 0 ? eyes(pick(GZ)) : nEye();
-            render();
-            if (++n > 8) {
-              clearInterval(t);
-              let res,
-                pay = 0,
-                nm = st.mode;
-              if (st.ggRemain > 0) {
-                res = forceOddWinIfNeeded(genGG(), "ggOdd");
-                pay = res.pay || 0;
-                if (res.hit) {
-                  st.stock += res.sets || 1;
-                  st.note = res.note;
-                }
-                st.ggRemain--;
-                if (st.ggRemain <= 0) endGG();
-                return finish(res, pay, st.mode);
-              }
-              if (st.gstop > 0) {
-                res = forceOddWinIfNeeded(genGS(), "gstopOdd");
-                pay = res.pay || 0;
-                if (res.hit && (res.endGStop || res.direct)) {
-                  st.gstop = 0;
-                  startGG(res.sets || 1, res.reason);
-                  nm = "gg";
-                } else if (res.hit && res.keepGStop) {
-                  st.stock += res.sets || 1;
-                  st.gstopHit = true;
-                  st.note = res.note + " / GG保持";
-                  st.gstop--;
-                  if (st.gstop <= 0) {
-                    startGG(1, "gstop");
-                    nm = "gg";
-                  } else {
-                    nm = "gstop";
-                  }
-                } else {
-                  st.gstop--;
-                  if (st.gstop <= 0) {
-                    if (st.gstopHit) {
-                      startGG(1, "gstop");
-                      nm = "gg";
-                    } else if ((st.gstopStock || 0) > 0) {
-                      startGStop("G-STOP再放出");
-                      nm = "gstop";
-                    } else {
-                      st.mode = "lowA";
-                      st.phase = "normal";
-                      st.note = "G-STOP終了";
-                      nm = "lowA";
-                    }
-                  } else {
-                    nm = "gstop";
-                  }
-                }
-                return finish(res, pay, nm);
-              }
-              if (st.gzone > 0) {
-                res = forceOddWinIfNeeded(genGZ(), "gzoneOdd");
-                pay = res.pay || 0;
-                if (res.hit) {
-                  startGG(res.sets || 1, res.reason);
-                  pay += 30;
-                  nm = "gg";
-                } else {
-                  st.gzone--;
-                  if (st.gzone <= 0) {
-                    st.mode = "lowA";
-                    st.phase = "normal";
-                    st.note = "G-ZONE終了";
-                    nm = "lowA";
-                  }
-                }
-                return finish(res, pay, nm);
-              }
-              if (st.pre > 0) {
-                st.tenjoG = (st.tenjoG || 0) + 1;
-                res = genPre();
-                st.pre--;
 
-                if (res.direct) {
-                  st.pending = false;
-                  startGG(res.sets || 1, res.reason);
-                  nm = "gg";
-                  return finish(res, res.pay || 0, nm);
-                }
+        const startDelay = delayed ? 360 : 0;
+        const tickMs = delayed ? 72 : 55;
+        const maxFrames = delayed ? 14 : 8;
 
-                if (st.pre <= 0 && st.pending) {
-                  startGG(st.hold || 1, st.holdReason);
-                  st.pending = false;
-                  res.hit = true;
-                  res.autoStop = true;
-                  nm = "gg";
-                }
-                return finish(res, res.pay || 0, nm);
+        setTimeout(() => {
+          let n = 0,
+            t = setInterval(() => {
+              st.e = spinPreviewEye();
+              render();
+              if (++n > maxFrames) {
+                clearInterval(t);
+                st.delayed = false;
+                return applySpinOutcome(out);
               }
-              st.tenjoG = (st.tenjoG || 0) + 1;
-              res = forceOddWinIfNeeded(genNormal(st.tenjoG >= CEILING_G));
-              pay = res.pay || 0;
-              nm = res.child ? trans({ k: res.child }) : st.mode;
-              if (res.direct) {
-                startGG(res.sets || 1, res.reason);
-                nm = "gg";
-              } else if (res.hit) {
-                startPre(res.sets || 1, res.reason || "mode", res.note);
-                pay = 0;
-                nm = st.mode;
-              } else if (res.gstopNow && (st.gstopStock || 0) > 0) {
-                startGStop(res.note);
-                nm = "gstop";
-              }
-              finish(res, pay, nm);
-            }
-          }, 55);
+            }, tickMs);
+        }, startDelay);
       }
       function reset() {
         autoLeft = 0;
@@ -1724,7 +2032,7 @@
           earn: 0,
           mode: "lowA",
           phase: "normal",
-          e: ["0", "0", "0"],
+          e: ["0", "1", "2"],
           role: "none",
           spin: false,
           panel: null,
@@ -1748,6 +2056,9 @@
           normalStage: "湖",
           stageGames: 0,
           forceRole: null,
+          dummy: false,
+          dummyValue: "0",
+          delayed: false,
         };
         save();
         render();
@@ -1813,13 +2124,41 @@
         save();
         render();
       }
+      function toggleDummy() {
+        st.dummy = !st.dummy;
+        if (st.dummy) {
+          stopAuto("DUMMY");
+          st.dummyValue = st.dummyValue || "0";
+        }
+        save();
+        render();
+      }
+      function dummyKey(k) {
+        if (k === "−") return toggleDummy();
+        if (k === "AC") {
+          st.dummyValue = "0";
+        } else if (/^[0-9]$/.test(k)) {
+          st.dummyValue = st.dummyValue === "0" ? k : (st.dummyValue + k).slice(-12);
+        } else if (k === "00") {
+          st.dummyValue = st.dummyValue === "0" ? "0" : (st.dummyValue + "00").slice(-12);
+        } else if (k === ".") {
+          if (!st.dummyValue.includes(".")) st.dummyValue += ".";
+        } else if (["+", "×", "÷", "="].includes(k)) {
+          st.dummyValue = "0";
+        } else if (["MODE", "DATA"].includes(k)) {
+          st.dummyValue = st.dummyValue || "0";
+        }
+        save();
+        render();
+      }
       function key(k) {
+        if (st.dummy) return dummyKey(k);
+        if (k === "−") return toggleDummy();
         if (k === "AC") return reset();
         if (k === "MODE") st.panel = st.panel === "mode" ? null : "mode";
         else if (k === "DATA") st.panel = st.panel === "data" ? null : "data";
         else if (k === "÷") st.panel = st.panel === "hist" ? null : "hist";
         else if (k === "×") st.panel = st.panel === "debug" ? null : "debug";
-        else if (k === "−") st.mute = !st.mute;
         else if ("123456789".includes(k)) return auto(+k);
         else if (k === "0") return auto(10);
         else if (k === "00") return auto(100);
@@ -1837,7 +2176,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v125_pre_history_fixed";
+      const STORE_KEY = "calc777v133_delay_late_eyes";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
@@ -1854,6 +2193,9 @@
               st.stageGames = st.stageGames || 0;
               st.forceRole = null;
               st.h5 = (st.h5 || []).map(cleanHistItem).slice(-5);
+              st.dummy = !!st.dummy;
+              st.dummyValue = st.dummyValue || "0";
+              st.delayed = false;
             }
           } catch (e) {
             localStorage.removeItem(STORE_KEY);
