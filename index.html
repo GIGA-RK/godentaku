@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v12.4</title>
+    <title>CALC-777 v12.5</title>
     <style>
       * {
         box-sizing: border-box;
@@ -425,7 +425,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v12.4</div>
+        <div>▣ CALC-777 v12.5</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -1138,20 +1138,65 @@
         return res;
       }
       function genPre() {
+        // 前兆中も小役履歴は通常どおり進める。
+        // 旧版では前兆中にdrawRole/updHを通していなかったため、
+        // 履歴が止まったり、強制役が次ゲームへ残って履歴表示が崩れることがあった。
+        const ch = drawRole();
+        updH(ch);
+
+        let baseRole = "none";
+        let basePay = 0;
+        if (["ub", "mb"].includes(ch.k)) baseRole = "replay";
+        if (["ly", "ry", "cry", "my"].includes(ch.k)) {
+          baseRole = "yellow";
+          basePay = 8;
+        }
+        if (["oneB", "oneC", "rf"].includes(ch.k)) {
+          baseRole = "chance";
+          basePay = 1;
+        }
+
+        // 前兆中のGOD/赤7は割り込み当選として扱う。
+        if (ch.k === "god")
+          return {
+            role: "god",
+            e: ["7", "7", "7"],
+            pay: 120,
+            note: "前兆中 GOD",
+            hit: true,
+            direct: true,
+            sets: 5,
+            reason: "god",
+            autoStop: true,
+          };
+        if (["red7", "sp"].includes(ch.k))
+          return {
+            role: "red7",
+            e: ["S", "S", "S"],
+            pay: 80,
+            note: "前兆中 赤7/S",
+            hit: true,
+            direct: true,
+            sets: 1,
+            reason: "red7",
+            autoStop: true,
+          };
+
         if (st.pre <= 1)
           return {
             role: "reach",
             e: eyes(pick(REACH)),
-            pay: 0,
-            note: "前兆最終",
+            pay: basePay,
+            note: "前兆最終 / " + ch.n,
             autoStop: true,
           };
+
         let r = Math.random();
-        return r < 0.25
-          ? { role: "chance", e: eyes(pick(CH)), pay: 0, note: "前兆中" }
-          : r < 0.38
-            ? { role: "reach", e: eyes(pick(REACH)), pay: 0, note: "前兆中" }
-            : { role: "none", e: nEye(), pay: 0, note: "前兆中" };
+        if (r < 0.25)
+          return { role: "chance", e: eyes(pick(CH)), pay: basePay, note: "前兆中 / " + ch.n };
+        if (r < 0.38)
+          return { role: "reach", e: eyes(pick(REACH)), pay: basePay, note: "前兆中 / " + ch.n };
+        return { role: baseRole, e: nEye(), pay: basePay, note: "前兆中 / " + ch.n };
       }
       function ggModeStockPercent(k, mode) {
         // GG中の上乗せ抽選は簡易版。
@@ -1634,6 +1679,14 @@
                 st.tenjoG = (st.tenjoG || 0) + 1;
                 res = genPre();
                 st.pre--;
+
+                if (res.direct) {
+                  st.pending = false;
+                  startGG(res.sets || 1, res.reason);
+                  nm = "gg";
+                  return finish(res, res.pay || 0, nm);
+                }
+
                 if (st.pre <= 0 && st.pending) {
                   startGG(st.hold || 1, st.holdReason);
                   st.pending = false;
@@ -1784,7 +1837,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v124_status_num_larger";
+      const STORE_KEY = "calc777v125_pre_history_fixed";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
