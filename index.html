@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v14.0</title>
+    <title>CALC-777 v14.3</title>
     <style>
       * {
         box-sizing: border-box;
@@ -280,6 +280,26 @@
       }
       .ggBanner.show {
         display: block;
+      }
+      .ggBanner.bannerGG {
+        border-color: #ca8a04;
+        background: #fde047;
+        color: #78350f;
+      }
+      .ggBanner.bannerGStop {
+        border-color: #16a34a;
+        background: #86efac;
+        color: #14532d;
+      }
+      .ggBanner.bannerGZone {
+        border-color: #f97316;
+        background: #fdba74;
+        color: #7c2d12;
+      }
+      .ggBanner.bannerSGG {
+        border-color: #dc2626;
+        background: #fca5a5;
+        color: #7f1d1d;
       }
       .reels.atActive {
         padding: 4px;
@@ -794,7 +814,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v14.0</div>
+        <div>▣ CALC-777 v14.3</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -850,6 +870,7 @@
         heavenL: ["天長", "heavenL"],
         super: ["超天", "super"],
         gg: ["GG", "gg"],
+        sgg: ["SGG", "gg"],
         gzone: ["G-ZONE", "gzone"],
         gstop: ["G-STOP", "gstop"],
       };
@@ -952,7 +973,10 @@
           gstopWeak: "017 01V 022".split(" "),
           gstopStrong: "00V 011 020 0V7".split(" "),
         },
-        GS_MISS = "131 151 313 353 515 535 V1V V3V V5V V7V 171 373 575".split(" ");
+        // G-STOP中は偶数なし。7系/S系は毎ゲーム変わり得るが、Sがある出目には7を混ぜない。
+        GS_REACH = "135 175 315 753 V31".split(" "),
+        GS_MISS_7 = "131 151 313 353 515 535 V1V V3V V5V V7V 171 373 575".split(" "),
+        GS_MISS_S = "1S1 3S3 5S5 S1S S3S S5S 13S 31S 15S 51S 35S 53S VSV SVS 1V3 3V5 5V1".split(" ");
       let st = {
         g: 0,
         coin: 0,
@@ -973,10 +997,12 @@
         holdReason: "mode",
         gstop: 0,
         gstopStock: 0,
+        gstopPre: 0,
         gstopHit: false,
         tenjoG: 0,
         note: "",
         ggRemain: 0,
+        sggRemain: 0,
         stock: 0,
         gzone: 0,
         lastLoop: "-",
@@ -1062,11 +1088,13 @@
             ? "gzone"
             : st.gstop > 0
               ? "gstop"
-              : st.ggRemain > 0
-                ? "gg"
-                : st.pre > 0
-                  ? "pre"
-                  : "normal";
+              : st.gstopPre > 0
+                ? "gstopPre"
+                : st.ggRemain > 0
+                  ? st.sggRemain > 0 ? "sgg" : "gg"
+                  : st.pre > 0
+                    ? "pre"
+                    : "normal";
       }
       function histDisplay() {
         let a = st.h5.slice(-5);
@@ -1452,12 +1480,24 @@
       }
       function startGStop(note) {
         if ((st.gstopStock || 0) > 0) st.gstopStock--;
+        st.gstopPre = 0;
+        st.sggRemain = 0;
         st.gstop = 5;
         st.gstopHit = false;
         st.gzone = 0;
         st.mode = "gstop";
         st.phase = "gstop";
         st.note = note || `G-STOP開始 / 残${st.gstopStock || 0}`;
+      }
+      function startGStopPre(note) {
+        if ((st.gstopStock || 0) <= 0 || st.gstop > 0 || st.gstopPre > 0 || st.ggRemain > 0 || st.gzone > 0) return;
+        st.gstopPre = pw([
+          { v: 3, w: 45 },
+          { v: 4, w: 35 },
+          { v: 5, w: 20 },
+        ]);
+        st.phase = "gstopPre";
+        st.note = (note || "G-STOP前兆") + ` / ${st.gstopPre}G`;
       }
       function applyNormalHistory(res, h) {
         // 青7履歴: 3連はG-STOP抽選、4連はG-STOP確定、5連以降はGG+G-STOP。
@@ -1470,7 +1510,6 @@
         if (h.b === 4) {
           addGStopStock("青7 4連 / G-STOP確定");
           res.gstopNow = true;
-          res.autoStop = true;
           res.note = "青7 4連 / G-STOP確定";
           return;
         }
@@ -1478,7 +1517,6 @@
           if (lotteryPercent(SETTING <= 2 ? 5 : SETTING === 3 ? 7.5 : SETTING === 4 ? 12.5 : SETTING === 5 ? 15 : 20)) {
             addGStopStock("青7 3連 / G-STOP当選");
             res.gstopNow = true;
-            res.autoStop = true;
             res.note = "青7 3連 / G-STOP当選";
           } else {
             res.note = "青7 3連 / G-STOP抽選";
@@ -1542,6 +1580,7 @@
           ex = rollLoop(r);
         st.stock += Math.max(0, base - 1) + ex;
         st.ggRemain = 100;
+        st.sggRemain = reason === "red7" ? 16 : 0;
         st.gstop = 0;
         st.gstopHit = false;
         st.gzone = 0;
@@ -1558,14 +1597,13 @@
           st.ggRemain = 100;
           stage("continue");
           st.note = "GG継続";
-        } else if ((st.gstopStock || 0) > 0) {
-          st.ggRemain = 0;
-          startGStop("G-STOP放出");
         } else {
+          // G-STOP保持があっても、G-ZONEを先に消化する。
           st.mode = "gzone";
           st.phase = "gzone";
           st.gzone = 5;
           st.ggRemain = 0;
+          st.sggRemain = 0;
           st.note = "G-ZONE開始";
         }
       }
@@ -1688,6 +1726,56 @@
         if (r < 0.38)
           return { role: baseRole, e: eyes(pick(REACH)), pay: basePay, note: "前兆中 / " + ch.n };
         return { role: baseRole, e: nEye(), pay: basePay, note: "前兆中 / " + ch.n };
+      }
+      function genGStopPre() {
+        const ch = drawRole();
+        updH(ch);
+        const baseRole = childRole(ch);
+        const basePay = childPay(ch);
+
+        // 前兆中でも確定役はそのまま割り込み。
+        if (ch.k === "god")
+          return {
+            role: "god",
+            e: ["7", "7", "7"],
+            pay: 120,
+            note: "G-STOP前兆中 GOD",
+            hit: true,
+            direct: true,
+            sets: 5,
+            reason: "god",
+            autoStop: true,
+          };
+        if (["red7", "red7m", "sp"].includes(ch.k))
+          return {
+            role: "red7",
+            e: ["S", "S", "S"],
+            pay: 80,
+            note: "G-STOP前兆中 赤7/S",
+            hit: true,
+            direct: true,
+            sets: 1,
+            reason: "red7",
+            autoStop: true,
+          };
+
+        if (st.gstopPre <= 1)
+          return {
+            role: baseRole,
+            e: ["0", "0", "0"],
+            pay: basePay,
+            note: "0揃い / G-STOP告知 / " + ch.n,
+            startGStop: true,
+            autoStop: true,
+          };
+
+        const tease = [...EYE_GROUPS.gstopWeak, ...EYE_GROUPS.gstopStrong];
+        return {
+          role: baseRole,
+          e: Math.random() < 0.45 ? eyes(pick(tease)) : nEye(),
+          pay: basePay,
+          note: "G-STOP前兆 / " + ch.n,
+        };
       }
       function ggModeStockPercent(k, mode) {
         // GG中の上乗せ抽選は簡易版。
@@ -1823,9 +1911,12 @@
           };
         return { role: "none", e: eyes(pick(GZ)), pay: 0, note: "G-ZONE中" };
       }
+      function gstopMissEye() {
+        return eyes(pick(Math.random() < 0.5 ? GS_MISS_7 : GS_MISS_S));
+      }
       function genGS() {
         let r = Math.random();
-        if (r < 0.015)
+        if (r < 0.012)
           return {
             role: "god",
             e: ["7", "7", "7"],
@@ -1837,9 +1928,21 @@
             endGStop: true,
             autoStop: true,
           };
-        if (r < 0.045)
+        if (r < 0.022)
           return {
-            role: "none",
+            role: "red7",
+            e: ["S", "S", "S"],
+            pay: 30,
+            note: "G-STOP S揃い",
+            hit: true,
+            sets: 1,
+            reason: "red7",
+            endGStop: true,
+            autoStop: true,
+          };
+        if (r < 0.052)
+          return {
+            role: "gstop",
             e: ["V", "V", "V"],
             pay: 30,
             note: "G-STOP V揃い",
@@ -1849,7 +1952,7 @@
             endGStop: true,
             autoStop: true,
           };
-        if (r < 0.135) {
+        if (r < 0.142) {
           let d = pick(["1", "3", "5"]);
           return {
             role: "gstop",
@@ -1863,10 +1966,10 @@
             autoStop: true,
           };
         }
-        if (r < 0.235)
+        if (r < 0.242)
           return {
             role: "gstop",
-            e: eyes(pick(["135", "315", "V31", "V34", "753"])),
+            e: eyes(pick(GS_REACH)),
             pay: 30,
             note: "G-STOP 上乗せ",
             hit: true,
@@ -1875,7 +1978,7 @@
             keepGStop: true,
             autoStop: true,
           };
-        return { role: "none", e: eyes(pick(GS_MISS)), pay: 0, note: "G-STOP中" };
+        return { role: "none", e: gstopMissEye(), pay: 0, note: "G-STOP中" };
       }
       function kind(c) {
         // kindは「役」ではなく液晶出目の分類。左下の役表示はres.role側で小役を表示する。
@@ -1905,6 +2008,9 @@
         return `<span class="miniLabel">Coin：</span><span class="miniNum ${cls}">${signedNum(st.coin, 6)}</span>`;
       }
       function formatStatusText() {
+        if (st.sggRemain > 0) {
+          return `<span class="miniLabel">SGG:</span><span class="miniNum">${fixedNum(st.sggRemain, 3)}</span> <span class="miniLabel">GG:</span><span class="miniNum">${fixedNum(st.ggRemain, 3)}</span>`;
+        }
         if (st.ggRemain > 0) {
           return `<span class="miniLabel">GG:</span><span class="miniNum">${fixedNum(st.ggRemain, 3)}</span> <span class="miniLabel">ST:</span><span class="miniNum">${fixedNum(st.stock, 3)}</span>`;
         }
@@ -1913,6 +2019,9 @@
         }
         if (st.gstop > 0) {
           return `<span class="miniLabel">GS:</span><span class="miniNum">${fixedNum(st.gstop, 3)}</span> <span class="miniLabel">ST:</span><span class="miniNum">${fixedNum(st.stock, 3)}</span>`;
+        }
+        if (st.gstopPre > 0) {
+          return `<span class="miniLabel">GSP:</span><span class="miniNum">${fixedNum(st.gstopPre, 3)}</span> <span class="miniLabel">GS:</span><span class="miniNum">${fixedNum(st.gstopStock || 0, 3)}</span>`;
         }
         if ((st.gstopStock || 0) > 0) {
           return `<span class="miniLabel">GS:</span><span class="miniNum">${fixedNum(st.gstopStock, 3)}</span> <span class="miniLabel">ST:</span><span class="miniNum">${fixedNum(st.stock, 3)}</span>`;
@@ -1964,6 +2073,9 @@
         return "GG:--- ST:---";
       }
       function stayStageHtml() {
+        if (st.sggRemain > 0) {
+          return `<span class="stageMain">SGG</span><span class="stageSub">${stageLabel()}</span>`;
+        }
         if (st.ggRemain > 0) {
           return `<span class="stageMain">${stageLabel()}</span>`;
         }
@@ -1973,10 +2085,13 @@
         if (st.gstop > 0) {
           return '<span class="stageMain">G-STOP</span>';
         }
+        if (st.gstopPre > 0) {
+          return '<span class="stageMain">G-STOP</span><span class="stageSub">前兆</span>';
+        }
         return `<span class="stageMain">${st.normalStage || "湖"}</span>`;
       }
       function reelClass(x) {
-        if (["1", "3", "5", "V"].includes(x)) return "reelRed";
+        if (["1", "3", "5", "V", "S"].includes(x)) return "reelRed";
         if (["2", "4", "6", "8"].includes(x)) return "reelYellow";
         if (x === "0") return "reelGreen";
         if (x === "7") return "reelRainbow";
@@ -1996,15 +2111,25 @@
           st.phase = "normal";
         }
       }
+      function bannerInfo() {
+        if (st.dummy) return { text: "", cls: "" };
+        if (st.sggRemain > 0) return { text: "SGG中", cls: "bannerSGG" };
+        if (st.ggRemain > 0) return { text: "GOD GAME中", cls: "bannerGG" };
+        if (st.gstop > 0) return { text: "G-STOP中", cls: "bannerGStop" };
+        if (st.gzone > 0) return { text: "G-ZONE中", cls: "bannerGZone" };
+        return { text: "", cls: "" };
+      }
       function render() {
         normalizeDisplayState();
         sync();
         let mi =
           st.gzone > 0
             ? M.gzone
-            : st.gstop > 0
+            : st.gstop > 0 || st.gstopPre > 0
               ? M.gstop
-              : M[st.mode] || M.lowA;
+              : st.sggRemain > 0
+                ? M.sgg
+                : M[st.mode] || M.lowA;
         $("fr").className = "fr " + mi[1] + (st.dummy ? " dummyCalc" : "");
         $("dummyValue").textContent = st.dummyValue || "0";
         $("stageBig").innerHTML = stayStageHtml();
@@ -2013,7 +2138,9 @@
         $("coinText").innerHTML = formatCoinText();
         $("histText").innerHTML = fixedHistHtml();
         $("statusText").innerHTML = formatStatusText();
-        $("ggBanner").classList.toggle("show", st.ggRemain > 0 && !st.dummy);
+        const bi = bannerInfo();
+        $("ggBanner").textContent = bi.text;
+        $("ggBanner").className = `ggBanner${bi.text ? " show " + bi.cls : ""}`;
         $("re").className = `reels${st.ggRemain > 0 ? " atActive" : ""}`;
         $("re").innerHTML = st.e.map(reelHtml).join("");
         document.body.classList.toggle("spin", st.spin);
@@ -2189,6 +2316,21 @@
           pay = res.pay || 0;
           return { branch, res, pay, nm };
         }
+        if (st.gstopPre > 0) {
+          branch = "gstopPre";
+          st.tenjoG = (st.tenjoG || 0) + 1;
+          res = genGStopPre();
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
+        if ((st.gstopStock || 0) > 0 && st.ggRemain <= 0 && st.gzone <= 0 && st.gstop <= 0) {
+          startGStopPre("G-STOP放出前兆");
+          branch = "gstopPre";
+          st.tenjoG = (st.tenjoG || 0) + 1;
+          res = genGStopPre();
+          pay = res.pay || 0;
+          return { branch, res, pay, nm };
+        }
 
         st.tenjoG = (st.tenjoG || 0) + 1;
         res = forceOddWinIfNeeded(genNormal(st.tenjoG >= CEILING_G));
@@ -2206,8 +2348,12 @@
             st.stock += res.sets || 1;
             st.note = res.note;
           }
+          if (st.sggRemain > 0) st.sggRemain--;
           st.ggRemain--;
-          if (st.ggRemain <= 0) endGG();
+          if (st.ggRemain <= 0) {
+            st.sggRemain = 0;
+            endGG();
+          }
           return finish(res, pay, st.mode);
         }
 
@@ -2261,6 +2407,7 @@
               st.phase = "normal";
               st.note = "G-ZONE終了";
               nm = "lowA";
+              if ((st.gstopStock || 0) > 0) startGStopPre("G-ZONE終了 / G-STOP前兆");
             }
           }
           return finish(res, pay, nm);
@@ -2286,6 +2433,24 @@
           return finish(res, pay, nm);
         }
 
+        if (branch === "gstopPre") {
+          st.gstopPre--;
+
+          if (res.direct) {
+            startGG(res.sets || 1, res.reason);
+            nm = "gg";
+            return finish(res, pay, nm);
+          }
+
+          if (res.startGStop) {
+            startGStop(res.note);
+            nm = "gstop";
+          } else {
+            nm = st.mode;
+          }
+          return finish(res, pay, nm);
+        }
+
         if (res.direct) {
           startGG(res.sets || 1, res.reason);
           nm = "gg";
@@ -2294,13 +2459,14 @@
           pay = 0;
           nm = st.mode;
         } else if (res.gstopNow && (st.gstopStock || 0) > 0) {
-          startGStop(res.note);
-          nm = "gstop";
+          startGStopPre(res.note);
+          nm = st.mode;
         }
         return finish(res, pay, nm);
       }
       function spinPreviewEye() {
-        if (st.gstop > 0) return eyes(pick(GS_MISS));
+        if (st.gstop > 0) return gstopMissEye();
+        if (st.gstopPre > 0) return Math.random() < 0.35 ? eyes(pick([...EYE_GROUPS.gstopWeak, ...EYE_GROUPS.gstopStrong])) : nEye();
         if (st.gzone > 0) return eyes(pick(GZ));
         return nEye();
       }
@@ -2364,6 +2530,8 @@
                 clearInterval(t);
                 st.delayed = false;
               st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog.slice(-240) : [st.coin || 0];
+              st.gstopPre = Number(st.gstopPre) || 0;
+              st.sggRemain = Number(st.sggRemain) || 0;
                 return applySpinOutcome(out);
               }
             }, tickMs);
@@ -2523,7 +2691,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v140_data_slump_autokeep";
+      const STORE_KEY = "calc777v143_colored_state_banners";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
@@ -2544,6 +2712,8 @@
               st.dummyValue = st.dummyValue || "0";
               st.delayed = false;
               st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog.slice(-240) : [st.coin || 0];
+              st.gstopPre = Number(st.gstopPre) || 0;
+              st.sggRemain = Number(st.sggRemain) || 0;
             }
           } catch (e) {
             localStorage.removeItem(STORE_KEY);
