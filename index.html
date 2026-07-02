@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v15.1</title>
+    <title>CALC-777 v15.3</title>
     <style>
       * {
         box-sizing: border-box;
@@ -755,11 +755,11 @@
         font-variant-numeric: tabular-nums;
       }
       .slumpBox {
-        margin-top: 8px;
+        margin-top: 9px;
         border-radius: 12px;
         background: #0f172a;
         border: 1px solid #334155;
-        padding: 7px;
+        padding: 8px;
       }
       .slumpTitle {
         display: flex;
@@ -767,12 +767,12 @@
         color: #cbd5e1;
         font-size: 10px;
         font-weight: 800;
-        margin-bottom: 4px;
+        margin-bottom: 5px;
       }
       .slumpSvg {
         display: block;
         width: 100%;
-        height: 118px;
+        height: 184px;
       }
       .slumpGrid {
         stroke: #334155;
@@ -783,6 +783,28 @@
         stroke: #94a3b8;
         stroke-width: 1.2;
         opacity: 0.9;
+      }
+      .slumpAxis {
+        stroke: #cbd5e1;
+        stroke-width: 1.1;
+        opacity: 0.95;
+      }
+      .slumpTick {
+        stroke: #94a3b8;
+        stroke-width: 1;
+        opacity: 0.85;
+      }
+      .slumpLabel {
+        fill: #cbd5e1;
+        font-size: 9px;
+        font-weight: 800;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+      .slumpUnit {
+        fill: #94a3b8;
+        font-size: 8px;
+        font-weight: 800;
+        font-family: "Helvetica Neue", Arial, sans-serif;
       }
       .slumpLine {
         fill: none;
@@ -825,7 +847,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v15.1</div>
+        <div>▣ CALC-777 v15.3</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -2337,30 +2359,73 @@
         return names[st.ggStage] || st.ggStage || "---";
       }
       function slumpSvg() {
-        const log = (st.coinLog && st.coinLog.length ? st.coinLog : [0]).slice(-240);
-        const w = 320;
-        const h = 118;
-        const pad = 10;
-        const vals = log.concat([0]);
+        const log = st.coinLog && st.coinLog.length ? st.coinLog : [0];
+        const w = 420;
+        const h = 184;
+        const left = 42;
+        const right = 12;
+        const top = 12;
+        const bottom = 28;
+        const plotW = w - left - right;
+        const plotH = h - top - bottom;
+
+        // 横軸: 初期は1000G幅。1000Gを超えたら現在G数まで右端を拡張。
+        const maxGame = Math.max(1000, log.length - 1, st.g || 0);
+        // 縦軸: 初期は±2000枚。超えたら1000枚単位で自動拡張。
+        const vals = log.concat([0, -2000, 2000]);
         let min = Math.min(...vals);
         let max = Math.max(...vals);
+        min = Math.min(-2000, Math.floor(min / 1000) * 1000);
+        max = Math.max(2000, Math.ceil(max / 1000) * 1000);
         if (min === max) {
-          min -= 10;
-          max += 10;
+          min -= 1000;
+          max += 1000;
         }
         const range = max - min || 1;
-        const x = (i) => pad + (log.length <= 1 ? 0 : (i / (log.length - 1)) * (w - pad * 2));
-        const y = (v) => h - pad - ((v - min) / range) * (h - pad * 2);
+        const x = (game) => left + (game / maxGame) * plotW;
+        const y = (v) => top + ((max - v) / range) * plotH;
         const pts = log.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
         const zeroY = y(0).toFixed(1);
-        const gridY1 = (pad + (h - pad * 2) / 3).toFixed(1);
-        const gridY2 = (pad + ((h - pad * 2) * 2) / 3).toFixed(1);
+
+        const xTicks = [];
+        const xStep = maxGame <= 1000 ? 200 : Math.ceil(maxGame / 5 / 1000) * 1000;
+        for (let g = 0; g <= maxGame; g += xStep) xTicks.push(g);
+        if (xTicks.at(-1) !== maxGame) xTicks.push(maxGame);
+
+        const yTicks = [];
+        const yStep = Math.max(1000, Math.ceil((max - min) / 6 / 1000) * 1000);
+        for (let v = min; v <= max; v += yStep) yTicks.push(v);
+        if (!yTicks.includes(0)) yTicks.push(0);
+        yTicks.sort((a, b) => a - b);
+
+        const xGrid = xTicks
+          .map((g) => {
+            const xx = x(g).toFixed(1);
+            return `<line class="slumpGrid" x1="${xx}" y1="${top}" x2="${xx}" y2="${h - bottom}"></line>
+              <line class="slumpTick" x1="${xx}" y1="${h - bottom}" x2="${xx}" y2="${h - bottom + 4}"></line>
+              <text class="slumpLabel" x="${xx}" y="${h - 10}" text-anchor="middle">${g}</text>`;
+          })
+          .join("");
+
+        const yGrid = yTicks
+          .map((v) => {
+            const yy = y(v).toFixed(1);
+            return `<line class="slumpGrid" x1="${left}" y1="${yy}" x2="${w - right}" y2="${yy}"></line>
+              <line class="slumpTick" x1="${left - 4}" y1="${yy}" x2="${left}" y2="${yy}"></line>
+              <text class="slumpLabel" x="${left - 7}" y="${Number(yy) + 3}" text-anchor="end">${v}</text>`;
+          })
+          .join("");
+
         return `<div class="slumpBox">
-          <div class="slumpTitle"><span>スランプグラフ</span><span>現在 ${st.coin}枚</span></div>
+          <div class="slumpTitle"><span>スランプグラフ</span><span>現在 ${st.coin}枚 / ${st.g}G</span></div>
           <svg class="slumpSvg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="持ちコイン推移">
-            <line class="slumpGrid" x1="${pad}" y1="${gridY1}" x2="${w - pad}" y2="${gridY1}"></line>
-            <line class="slumpGrid" x1="${pad}" y1="${gridY2}" x2="${w - pad}" y2="${gridY2}"></line>
-            <line class="slumpZero" x1="${pad}" y1="${zeroY}" x2="${w - pad}" y2="${zeroY}"></line>
+            ${xGrid}
+            ${yGrid}
+            <line class="slumpZero" x1="${left}" y1="${zeroY}" x2="${w - right}" y2="${zeroY}"></line>
+            <line class="slumpAxis" x1="${left}" y1="${top}" x2="${left}" y2="${h - bottom}"></line>
+            <line class="slumpAxis" x1="${left}" y1="${h - bottom}" x2="${w - right}" y2="${h - bottom}"></line>
+            <text class="slumpUnit" x="${left}" y="${top - 3}" text-anchor="start">枚</text>
+            <text class="slumpUnit" x="${w - right}" y="${h - 2}" text-anchor="end">G</text>
             <polyline class="slumpLine" points="${pts}"></polyline>
           </svg>
         </div>`;
@@ -2745,7 +2810,6 @@
         st.earn += payout;
         st.coinLog = st.coinLog || [0];
         st.coinLog.push(st.coin);
-        st.coinLog = st.coinLog.slice(-240);
         const roleLabel = PAY[st.role] ? PAY[st.role][0] : "";
         st.h.unshift({
           g: st.g,
@@ -2965,7 +3029,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v151_at_gstop_stock";
+      const STORE_KEY = "calc777v153_slump_axes_1000_2000";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
@@ -2990,7 +3054,7 @@
               st.dummyValue = st.dummyValue || "0";
               st.delayed = false;
               st.reelAlert = false;
-              st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog.slice(-240) : [st.coin || 0];
+              st.coinLog = st.coinLog && st.coinLog.length ? st.coinLog : [st.coin || 0];
               st.gstopPre = Number(st.gstopPre) || 0;
               st.sggRemain = Number(st.sggRemain) || 0;
             }
