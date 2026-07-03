@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CALC-777 v15.3</title>
+    <title>CALC-777 v15.5</title>
     <style>
       * {
         box-sizing: border-box;
@@ -677,12 +677,12 @@
       }
       .p {
         display: none;
-        margin-top: 12px;
-        padding: 12px;
-        border-radius: 18px;
+        margin-top: 9px;
+        padding: 9px;
+        border-radius: 16px;
         background: #18181b;
         border: 1px solid #3f3f46;
-        font-size: 13px;
+        font-size: 12px;
       }
       .p.show {
         display: block;
@@ -733,46 +733,46 @@
       .dataStats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 5px;
-        margin-top: 8px;
-        font-size: 10px;
+        gap: 4px;
+        margin-top: 5px;
+        font-size: 9px;
       }
       .dataStats span {
         display: block;
         background: #27272a;
-        border-radius: 9px;
-        padding: 6px 4px;
+        border-radius: 8px;
+        padding: 4px 3px;
         text-align: center;
         color: #cbd5e1;
         white-space: nowrap;
       }
       .dataStats b {
         display: block;
-        margin-top: 2px;
+        margin-top: 1px;
         color: #fff;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 800;
         font-variant-numeric: tabular-nums;
       }
       .slumpBox {
-        margin-top: 9px;
-        border-radius: 12px;
+        margin-top: 6px;
+        border-radius: 11px;
         background: #0f172a;
         border: 1px solid #334155;
-        padding: 8px;
+        padding: 6px;
       }
       .slumpTitle {
         display: flex;
         justify-content: space-between;
         color: #cbd5e1;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
       }
       .slumpSvg {
         display: block;
         width: 100%;
-        height: 184px;
+        height: 156px;
       }
       .slumpGrid {
         stroke: #334155;
@@ -847,7 +847,7 @@
   <body>
     <main class="w">
       <div class="top">
-        <div>▣ CALC-777 v15.3</div>
+        <div>▣ CALC-777 v15.5</div>
         <div>calculator</div>
       </div>
       <section class="calc">
@@ -886,7 +886,7 @@
         <div id="pa" class="p"></div>
         <div id="keys" class="keys"></div>
         <div class="foot">
-          1-9=指定回 / 0=10回 / 00=100回 / .=無限AUTO / ×=DEBUG / 画面タップでAUTO停止
+          AUTO中: 数字/00/./AC=停止のみ / 液晶タップ=停止 / スワイプ無効
         </div>
       </section>
     </main>
@@ -1172,13 +1172,28 @@
         }
       }
       function autoStop(res, code) {
-        // 内部当選・前兆開始だけではAUTOを止めない。
-        // 画面上で当選/上乗せが見えた時だけ停止する。
-        return !!(
-          (res && (res.direct || res.autoStop)) ||
-          ["777", "SSS", "VVV"].includes(code) ||
-          isOddWin(code)
-        );
+        if (!res) return false;
+        const branch = res.branch || "";
+        const activeStockMode = ["gg", "sgg", "gstop"].includes(branch);
+        const stockLike =
+          !!res.hit &&
+          (
+            (res.sets || 0) > 0 ||
+            res.startSGG ||
+            res.resetSGG ||
+            res.keepGStop ||
+            res.endGStop ||
+            res.gstopNow
+          );
+
+        // AT中・SGG中・G-STOP中の上乗せ/ストックではAUTO停止しない。
+        if (activeStockMode && stockLike) return false;
+
+        // 通常時などのG-STOP当選、G-STOP開始告知、確定役、当選告知では停止。
+        if (res.gstopNow || res.startGStop || res.direct || res.autoStop) return true;
+
+        // 念のため、液晶上の明確な告知出目でも停止。ただし上の除外を優先する。
+        return ["777", "SSS", "VVV"].includes(code) || isOddWin(code);
       }
       function sync() {
         st.phase =
@@ -2361,22 +2376,22 @@
       function slumpSvg() {
         const log = st.coinLog && st.coinLog.length ? st.coinLog : [0];
         const w = 420;
-        const h = 184;
+        const h = 156;
         const left = 42;
         const right = 12;
-        const top = 12;
-        const bottom = 28;
+        const top = 10;
+        const bottom = 24;
         const plotW = w - left - right;
         const plotH = h - top - bottom;
 
-        // 横軸: 初期は1000G幅。1000Gを超えたら現在G数まで右端を拡張。
-        const maxGame = Math.max(1000, log.length - 1, st.g || 0);
-        // 縦軸: 初期は±2000枚。超えたら1000枚単位で自動拡張。
-        const vals = log.concat([0, -2000, 2000]);
+        // 横軸: 初期は200G幅。200Gを超えたら現在G数まで右端を拡張。
+        const maxGame = Math.max(200, log.length - 1, st.g || 0);
+        // 縦軸: 初期は±1000枚。超えたら500枚単位で補助軸を自動調整。
+        const vals = log.concat([0, -1000, 1000]);
         let min = Math.min(...vals);
         let max = Math.max(...vals);
-        min = Math.min(-2000, Math.floor(min / 1000) * 1000);
-        max = Math.max(2000, Math.ceil(max / 1000) * 1000);
+        min = Math.min(-1000, Math.floor(min / 500) * 500);
+        max = Math.max(1000, Math.ceil(max / 500) * 500);
         if (min === max) {
           min -= 1000;
           max += 1000;
@@ -2388,12 +2403,12 @@
         const zeroY = y(0).toFixed(1);
 
         const xTicks = [];
-        const xStep = maxGame <= 1000 ? 200 : Math.ceil(maxGame / 5 / 1000) * 1000;
+        const xStep = maxGame <= 200 ? 50 : maxGame <= 1000 ? 200 : Math.ceil(maxGame / 5 / 1000) * 1000;
         for (let g = 0; g <= maxGame; g += xStep) xTicks.push(g);
         if (xTicks.at(-1) !== maxGame) xTicks.push(maxGame);
 
         const yTicks = [];
-        const yStep = Math.max(1000, Math.ceil((max - min) / 6 / 1000) * 1000);
+        const yStep = Math.max(500, Math.ceil((max - min) / 6 / 500) * 500);
         for (let v = min; v <= max; v += yStep) yTicks.push(v);
         if (!yTicks.includes(0)) yTicks.push(0);
         yTicks.sort((a, b) => a - b);
@@ -2403,7 +2418,7 @@
             const xx = x(g).toFixed(1);
             return `<line class="slumpGrid" x1="${xx}" y1="${top}" x2="${xx}" y2="${h - bottom}"></line>
               <line class="slumpTick" x1="${xx}" y1="${h - bottom}" x2="${xx}" y2="${h - bottom + 4}"></line>
-              <text class="slumpLabel" x="${xx}" y="${h - 10}" text-anchor="middle">${g}</text>`;
+              <text class="slumpLabel" x="${xx}" y="${h - 8}" text-anchor="middle">${g}</text>`;
           })
           .join("");
 
@@ -2425,7 +2440,7 @@
             <line class="slumpAxis" x1="${left}" y1="${top}" x2="${left}" y2="${h - bottom}"></line>
             <line class="slumpAxis" x1="${left}" y1="${h - bottom}" x2="${w - right}" y2="${h - bottom}"></line>
             <text class="slumpUnit" x="${left}" y="${top - 3}" text-anchor="start">枚</text>
-            <text class="slumpUnit" x="${w - right}" y="${h - 2}" text-anchor="end">G</text>
+            <text class="slumpUnit" x="${w - right}" y="${h - 1}" text-anchor="end">G</text>
             <polyline class="slumpLine" points="${pts}"></polyline>
           </svg>
         </div>`;
@@ -2604,6 +2619,7 @@
         let { branch, res } = out,
           pay = out.pay || 0,
           nm = out.nm || st.mode;
+        if (res) res.branch = branch;
 
         if (branch === "sgg") {
           if (res.hit) {
@@ -3004,7 +3020,15 @@
         save();
         render();
       }
+      const AUTO_CANCEL_KEYS = new Set(["AC", "0", "00", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+      function isAutoCancelKey(k) {
+        return AUTO_CANCEL_KEYS.has(k);
+      }
       function key(k) {
+        if (autoLeft !== 0 && isAutoCancelKey(k)) {
+          stopAuto("AUTO停止 / キー操作キャンセル");
+          return;
+        }
         if (st.dummy) return dummyKey(k);
         if (k === "−") return toggleDummy();
         if (k === "AC") return reset();
@@ -3029,7 +3053,7 @@
         }
       }
       const STORE = safe();
-      const STORE_KEY = "calc777v153_slump_axes_1000_2000";
+      const STORE_KEY = "calc777v155_slump_compact_200_1000";
       function save() {
         if (STORE) localStorage.setItem(STORE_KEY, JSON.stringify(st));
       }
@@ -3087,18 +3111,50 @@
           if (b) handleDebug(b.dataset.debug);
         };
       }
-      document.addEventListener(
-        "pointerdown",
-        (e) => {
-          const b = e.target.closest && e.target.closest("button");
-          const k = b && b.dataset ? b.dataset.k : "";
-          if (k === "DATA" || k === "MODE") return;
-          if (autoLeft !== 0) stopAuto("AUTO停止");
-        },
-        { passive: true },
-      );
+      function bindLcdAutoStop() {
+        const lcd = document.querySelector(".lcd");
+        if (!lcd) return;
+        let down = null;
+        lcd.addEventListener(
+          "pointerdown",
+          (e) => {
+            down = { x: e.clientX, y: e.clientY, moved: false };
+          },
+          { passive: true },
+        );
+        lcd.addEventListener(
+          "pointermove",
+          (e) => {
+            if (!down) return;
+            const dx = e.clientX - down.x;
+            const dy = e.clientY - down.y;
+            if (Math.hypot(dx, dy) > 14) down.moved = true;
+          },
+          { passive: true },
+        );
+        lcd.addEventListener(
+          "pointerup",
+          (e) => {
+            if (!down) return;
+            const dx = e.clientX - down.x;
+            const dy = e.clientY - down.y;
+            const isSwipe = down.moved || Math.hypot(dx, dy) > 14;
+            down = null;
+            if (!isSwipe && autoLeft !== 0) stopAuto("AUTO停止 / 液晶タップ");
+          },
+          { passive: true },
+        );
+        lcd.addEventListener(
+          "pointercancel",
+          () => {
+            down = null;
+          },
+          { passive: true },
+        );
+      }
       load();
       build();
+      bindLcdAutoStop();
       render();
     </script>
   </body>
